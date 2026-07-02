@@ -7,6 +7,7 @@ import {
 } from "../isometric";
 import {
   ensureWorldTextures,
+  getBoundaryTextureKey,
   getFloorTextureKey,
 } from "../render/worldTextures";
 import { getPartySummary } from "../creatures/party";
@@ -25,8 +26,8 @@ import {
 } from "../world/zoneProps";
 
 const FLOOR_LAYER = 0;
-/** Above all tiles, walls, and props (max ~15×15 grid); below HUD (10_000 + scrollFactor 0). */
-const PLAYER_DEPTH = 20_000;
+const PROP_LAYER = 0.45;
+const PLAYER_LAYER = 0.5;
 const MOVE_SPEED = 6;
 const ENCOUNTER_TRAVEL_THRESHOLD = 0.75;
 const ENCOUNTER_CHANCE = 0.10;
@@ -315,12 +316,12 @@ export class IsometricScene extends Phaser.Scene {
         }
 
         const screen = this.toScreen(x, y);
-        const depth = depthForGridCell(x, y, FLOOR_LAYER);
+        const boundaryKey = getBoundaryTextureKey(zone.id);
 
         const block = this.add
-          .image(screen.x, screen.y, "hedge-block")
-          .setOrigin(0.5, 0.5);
-        block.setDepth(depth);
+          .image(screen.x, screen.y + TILE_HEIGHT / 2 - 2, boundaryKey)
+          .setOrigin(0.5, 1);
+        block.setDepth(depthForGridCell(x, y, PROP_LAYER));
       }
     }
   }
@@ -337,7 +338,7 @@ export class IsometricScene extends Phaser.Scene {
       const propSprite = this.add
         .image(screen.x, screen.y + TILE_HEIGHT / 2 - 2, key)
         .setOrigin(0.5, 1);
-      propSprite.setDepth(depthForGridCell(prop.x, prop.y, 0.45));
+      propSprite.setDepth(depthForGridCell(prop.x, prop.y, PROP_LAYER));
     }
   }
 
@@ -393,7 +394,9 @@ export class IsometricScene extends Phaser.Scene {
       screen.x,
       screen.y + TILE_HEIGHT / 2 - 2,
     );
-    this.player.setDepth(PLAYER_DEPTH);
+    this.player.setDepth(
+      depthForGridCell(this.playerGridX, this.playerGridY, PLAYER_LAYER),
+    );
   }
 
   private renderHud(zone: ZoneDefinition): void {

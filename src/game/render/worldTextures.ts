@@ -15,11 +15,16 @@ const WORLD_TEXTURE_KEYS = [
   "wall-block",
   "hedge-block",
   "floor-path",
+  "boundary-grove",
+  "boundary-shrine",
+  "boundary-village",
+  "boundary-overworld",
   "prop-tree",
   "prop-fern",
   "prop-shrine-altar",
   "prop-standing-stone",
   "prop-hearth",
+  "prop-cottage",
   "prop-gate",
   "prop-gate-locked",
   "player-south",
@@ -27,6 +32,8 @@ const WORLD_TEXTURE_KEYS = [
   "player-east",
   "player-west",
 ] as const;
+
+const BOUNDARY_HEIGHT = 56;
 
 function removeStaleTextures(scene: Phaser.Scene, zoneId: ZoneId): void {
   for (const key of WORLD_TEXTURE_KEYS) {
@@ -80,18 +87,60 @@ function generateFloorTextures(scene: Phaser.Scene, zoneId: ZoneId): void {
   }
 }
 
-function generateWallTextures(scene: Phaser.Scene): void {
-  const gBlock = scene.make.graphics({ x: 0, y: 0 });
-  drawSquareTile(gBlock, TILE_WIDTH, TILE_HEIGHT, 0x5a5a68, 0x3a3a48, 0.55);
-  gBlock.generateTexture("wall-block", TILE_WIDTH, TILE_HEIGHT);
-  gBlock.destroy();
+function generateBoundaryTexture(
+  scene: Phaser.Scene,
+  key: string,
+  draw: (g: Phaser.GameObjects.Graphics) => void,
+): void {
+  if (scene.textures.exists(key)) {
+    return;
+  }
+  const g = scene.make.graphics({ x: 0, y: 0 });
+  draw(g);
+  g.generateTexture(key, TILE_WIDTH, BOUNDARY_HEIGHT);
+  g.destroy();
+}
 
-  const gHedge = scene.make.graphics({ x: 0, y: 0 });
-  drawSquareTile(gHedge, TILE_WIDTH, TILE_HEIGHT, 0x4a7a40, 0x2a5028, 0.55);
-  gHedge.fillStyle(0x5a9a48, 0.65);
-  gHedge.fillCircle(TILE_WIDTH / 2, TILE_HEIGHT / 2, 10);
-  gHedge.generateTexture("hedge-block", TILE_WIDTH, TILE_HEIGHT);
-  gHedge.destroy();
+function generateWallTextures(scene: Phaser.Scene): void {
+  generateBoundaryTexture(scene, "boundary-grove", (g) => {
+    g.fillStyle(0x5a4830, 1);
+    g.fillRect(10, BOUNDARY_HEIGHT - 14, 28, 14);
+    g.fillStyle(0x3a7828, 1);
+    g.fillCircle(24, BOUNDARY_HEIGHT - 22, 18);
+    g.fillStyle(0x5a9a40, 0.75);
+    g.fillCircle(14, BOUNDARY_HEIGHT - 28, 10);
+    g.fillCircle(34, BOUNDARY_HEIGHT - 26, 8);
+  });
+
+  generateBoundaryTexture(scene, "boundary-shrine", (g) => {
+    g.fillStyle(0x5a5068, 1);
+    g.fillRect(8, BOUNDARY_HEIGHT - 18, 32, 18);
+    g.fillStyle(0x8a78a8, 1);
+    g.fillRect(12, BOUNDARY_HEIGHT - 32, 24, 16);
+    g.fillStyle(0xc8b8e8, 0.5);
+    g.fillCircle(24, BOUNDARY_HEIGHT - 38, 4);
+  });
+
+  generateBoundaryTexture(scene, "boundary-village", (g) => {
+    g.fillStyle(0x8a6848, 1);
+    g.fillRect(6, BOUNDARY_HEIGHT - 16, 36, 16);
+    g.fillStyle(0xa88868, 1);
+    for (let i = 0; i < 4; i++) {
+      g.fillRect(10 + i * 9, BOUNDARY_HEIGHT - 28, 7, 12);
+    }
+    g.lineStyle(1, 0x6a5038, 0.6);
+    g.strokeRect(6.5, BOUNDARY_HEIGHT - 16.5, 35, 15);
+  });
+
+  generateBoundaryTexture(scene, "boundary-overworld", (g) => {
+    g.fillStyle(0x506878, 1);
+    g.fillRect(4, BOUNDARY_HEIGHT - 20, 40, 20);
+    g.fillStyle(0x7898a8, 1);
+    g.fillTriangle(4, BOUNDARY_HEIGHT - 20, 24, BOUNDARY_HEIGHT - 44, 44, BOUNDARY_HEIGHT - 20);
+    g.fillStyle(0x98b8c8, 0.45);
+    g.fillRect(8, BOUNDARY_HEIGHT - 36, 6, 16);
+    g.fillRect(34, BOUNDARY_HEIGHT - 32, 5, 12);
+  });
 }
 
 function generatePropTextures(scene: Phaser.Scene): void {
@@ -146,6 +195,20 @@ function generatePropTextures(scene: Phaser.Scene): void {
     g.fillStyle(0xff8830, 0.8);
     g.fillCircle(24, 18, 5);
     g.generateTexture("prop-hearth", 48, 40);
+    g.destroy();
+  }
+
+  if (!scene.textures.exists("prop-cottage")) {
+    const g = scene.make.graphics({ x: 0, y: 0 });
+    g.fillStyle(0x7a5840, 1);
+    g.fillRect(10, 22, 28, 18);
+    g.fillStyle(0x9a4030, 1);
+    g.fillTriangle(8, 22, 24, 6, 40, 22);
+    g.fillStyle(0x4a3828, 1);
+    g.fillRect(20, 28, 8, 12);
+    g.fillStyle(0xffcc88, 0.7);
+    g.fillRect(12, 26, 6, 5);
+    g.generateTexture("prop-cottage", 48, 44);
     g.destroy();
   }
 
@@ -212,6 +275,10 @@ function generatePlayerTextures(scene: Phaser.Scene): void {
     g.generateTexture(key, 32, 38);
     g.destroy();
   }
+}
+
+export function getBoundaryTextureKey(zoneId: ZoneId): string {
+  return `boundary-${zoneId}`;
 }
 
 export function ensureWorldTextures(scene: Phaser.Scene, zoneId: ZoneId): void {
