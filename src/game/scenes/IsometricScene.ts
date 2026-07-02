@@ -220,6 +220,7 @@ export class IsometricScene extends Phaser.Scene {
       .setOrigin(0.5, 1);
     this.syncPlayerToGrid();
     this.configureCamera(zone);
+    this.cameras.main.startFollow(this.player, true, 0.12, 0.12);
     this.updateShrinePrompt();
   }
 
