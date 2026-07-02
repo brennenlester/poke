@@ -5,6 +5,11 @@ import {
   depthForGridCell,
   gridToScreen,
 } from "../isometric";
+import {
+  ensureWorldTextures,
+  getFloorTextureKey,
+  WALL_RISE,
+} from "../render/worldTextures";
 import { getPartySummary } from "../creatures/party";
 import { getInventorySummary } from "../inventory/playerInventory";
 import { rollWildCreature } from "../encounters/tables";
@@ -15,21 +20,24 @@ import {
 } from "../world/zones";
 import { toggleOverworldUnlock, worldState } from "../world/worldState";
 import { TileType, type ZoneDefinition, type ZoneId } from "../world/zoneTypes";
+import {
+  getZoneProps,
+  propTextureKey,
+} from "../world/zoneProps";
 
 const FLOOR_LAYER = 0;
 const PLAYER_LAYER = 0.5;
 const MOVE_SPEED = 6;
 const ENCOUNTER_TRAVEL_THRESHOLD = 0.75;
 const ENCOUNTER_CHANCE = 0.10;
-const GATE_LOCKED = 0x8b3a3a;
-const GATE_OPEN = 0x4a9a5a;
-const WALL_TINT = 0x3a3a4a;
-const SHRINE_GLOW = 0xc8b8e8;
+
+type Facing = "south" | "north" | "east" | "west";
 
 export class IsometricScene extends Phaser.Scene {
   private currentZoneId: ZoneId = STARTING_ZONE_ID;
   private playerGridX = 3;
   private playerGridY = 7;
+  private playerFacing: Facing = "south";
   private player!: Phaser.GameObjects.Image;
   private cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
   private wasd!: {
@@ -44,26 +52,27 @@ export class IsometricScene extends Phaser.Scene {
   private inEncounter = false;
   private inShrine = false;
   private shrinePrompt?: Phaser.GameObjects.Text;
+  private worldOrigin = { x: 0, y: 0 };
 
   constructor() {
     super({ key: "IsometricScene" });
   }
 
   create(): void {
-    this.createPlaceholderTextures();
-
     const startZone = getZone(STARTING_ZONE_ID);
     if (startZone.defaultSpawn) {
       this.playerGridX = startZone.defaultSpawn.x;
       this.playerGridY = startZone.defaultSpawn.y;
     }
 
-    this.loadZone(this.currentZoneId);
-
     this.cursors = this.input.keyboard!.createCursorKeys();
     this.wasd = this.input.keyboard!.addKeys("W,A,S,D") as typeof this.wasd;
     this.unlockKey = this.input.keyboard!.addKey("U");
     this.interactKey = this.input.keyboard!.addKey("E");
+
+    this.loadZone(this.currentZoneId);
+
+    this.cameras.main.startFollow(this.player, true, 0.12, 0.12);
 
     this.events.on("resume", () => {
       this.inEncounter = false;
@@ -76,9 +85,10 @@ export class IsometricScene extends Phaser.Scene {
       this.playerGridX = x;
       this.playerGridY = y;
       this.syncPlayerToGrid();
+      this.cameras.main.startFollow(this.player, true, 0.12, 0.12);
     });
 
-    this.scale.on("resize", () => this.repositionZone());
+    this.scale.on("resize", () => this.onResize());
   }
 
   update(_time: number, delta: number): void {
@@ -116,6 +126,8 @@ export class IsometricScene extends Phaser.Scene {
       return;
     }
 
+    this.updateFacing(dx, dy);
+
     const length = Math.hypot(dx, dy);
     dx /= length;
     dy /= length;
@@ -131,6 +143,19 @@ export class IsometricScene extends Phaser.Scene {
       this.syncPlayerToGrid();
       this.tryZoneTransition(zone);
       this.tryRandomEncounter(step);
+    }
+  }
+
+  private updateFacing(dx: number, dy: number): void {
+    let facing = this.playerFacing;
+    if (Math.abs(dx) > Math.abs(dy)) {
+      facing = dx > 0 ? "east" : "west";
+    } else if (dy !== 0) {
+      facing = dy > 0 ? "south" : "north";
+    }
+    if (facing !== this.playerFacing) {
+      this.playerFacing = facing;
+      this.player.setTexture(`player-${facing}`);
     }
   }
 
@@ -182,45 +207,71 @@ export class IsometricScene extends Phaser.Scene {
 
     this.children.removeAll(true);
     this.shrinePrompt = undefined;
-    this.createPlaceholderTextures();
+
+    ensureWorldTextures(this, zoneId);
+    this.worldOrigin = this.getZoneWorldOrigin(zone);
+
     this.drawZoneTiles(zone);
+    this.drawProps(zone);
     this.renderHud(zone);
 
-    this.player = this.add.image(0, 0, "player").setOrigin(0.5, 1);
+    this.player = this.add
+      .image(0, 0, `player-${this.playerFacing}`)
+      .setOrigin(0.5, 1);
     this.syncPlayerToGrid();
+    this.configureCamera(zone);
     this.updateShrinePrompt();
   }
 
-  private createPlaceholderTextures(): void {
-    if (this.textures.exists("iso-tile")) {
-      return;
-    }
+  private getZoneWorldOrigin(zone: ZoneDefinition): { x: number; y: number } {
+    return {
+      x: zone.height * (TILE_WIDTH / 2),
+      y: WALL_RISE + TILE_HEIGHT * 2,
+    };
+  }
 
-    const tileGraphics = this.make.graphics({ x: 0, y: 0 });
-    tileGraphics.fillStyle(0xffffff, 1);
-    tileGraphics.beginPath();
-    tileGraphics.moveTo(TILE_WIDTH / 2, 0);
-    tileGraphics.lineTo(TILE_WIDTH, TILE_HEIGHT / 2);
-    tileGraphics.lineTo(TILE_WIDTH / 2, TILE_HEIGHT);
-    tileGraphics.lineTo(0, TILE_HEIGHT / 2);
-    tileGraphics.closePath();
-    tileGraphics.fillPath();
-    tileGraphics.lineStyle(1, 0x8b6914, 0.35);
-    tileGraphics.strokePath();
-    tileGraphics.generateTexture("iso-tile", TILE_WIDTH, TILE_HEIGHT);
-    tileGraphics.destroy();
+  private configureCamera(zone: ZoneDefinition): void {
+    const origin = this.worldOrigin;
+    const corners = [
+      gridToScreen(0, 0, origin.x, origin.y),
+      gridToScreen(zone.width - 1, 0, origin.x, origin.y),
+      gridToScreen(0, zone.height - 1, origin.x, origin.y),
+      gridToScreen(
+        zone.width - 1,
+        zone.height - 1,
+        origin.x,
+        origin.y,
+      ),
+    ];
 
-    const playerGraphics = this.make.graphics({ x: 0, y: 0 });
-    playerGraphics.fillStyle(0xe8a838, 1);
-    playerGraphics.fillCircle(16, 20, 14);
-    playerGraphics.fillStyle(0xf5d78e, 1);
-    playerGraphics.fillCircle(16, 16, 10);
-    playerGraphics.generateTexture("player", 32, 36);
-    playerGraphics.destroy();
+    const xs = corners.map((c) => c.x);
+    const ys = corners.map((c) => c.y);
+    const padding = 140;
+    const minX = Math.min(...xs) - padding;
+    const minY = Math.min(...ys) - WALL_RISE - padding;
+    const maxX = Math.max(...xs) + TILE_WIDTH + padding;
+    const maxY = Math.max(...ys) + TILE_HEIGHT + WALL_RISE + padding;
+    const worldW = maxX - minX;
+    const worldH = maxY - minY;
+
+    this.cameras.main.setBounds(minX, minY, worldW, worldH);
+
+    const zoomX = (this.scale.width * 0.94) / worldW;
+    const zoomY = (this.scale.height * 0.9) / worldH;
+    const zoom = Phaser.Math.Clamp(Math.min(zoomX, zoomY), 0.85, 2.8);
+    this.cameras.main.setZoom(zoom);
+  }
+
+  private onResize(): void {
+    const zone = getZone(this.currentZoneId);
+    this.configureCamera(zone);
   }
 
   private drawZoneTiles(zone: ZoneDefinition): void {
-    const origin = this.getGridOrigin(zone);
+    const origin = this.worldOrigin;
+    const transitionSet = new Set(
+      zone.transitions.map((t) => `${t.x},${t.y}`),
+    );
 
     for (let y = 0; y < zone.height; y++) {
       for (let x = 0; x < zone.width; x++) {
@@ -230,17 +281,20 @@ export class IsometricScene extends Phaser.Scene {
         }
 
         const screen = gridToScreen(x, y, origin.x, origin.y);
+        const isPath = transitionSet.has(`${x},${y}`);
+        const textureKey = isPath
+          ? "floor-path"
+          : getFloorTextureKey(zone.id, (x + y) % 2 === 0);
+
         const tile = this.add
-          .image(screen.x, screen.y, "iso-tile")
+          .image(screen.x, screen.y, textureKey)
           .setOrigin(0.5, 0.5);
 
-        if (tileType === TileType.OverworldGate) {
+        if (tileType === TileType.OverworldGate && !isPath) {
           tile.setTint(
-            worldState.overworldUnlocked ? GATE_OPEN : GATE_LOCKED,
+            worldState.overworldUnlocked ? 0xaaffaa : 0xffaaaa,
           );
-        } else {
-          const isLight = (x + y) % 2 === 0;
-          tile.setTint(isLight ? zone.lightTint : zone.darkTint);
+          tile.setAlpha(0.85);
         }
 
         tile.setDepth(depthForGridCell(x, y, FLOOR_LAYER));
@@ -248,24 +302,59 @@ export class IsometricScene extends Phaser.Scene {
     }
 
     this.drawWalls(zone, origin);
-    this.drawShrineMarker(zone, origin);
   }
 
-  private drawShrineMarker(
+  private drawWalls(
     zone: ZoneDefinition,
     origin: { x: number; y: number },
   ): void {
-    if (!zone.shrineInteract) {
-      return;
+    for (let y = 0; y < zone.height; y++) {
+      for (let x = 0; x < zone.width; x++) {
+        if (zone.tiles[y][x] !== TileType.Wall) {
+          continue;
+        }
+
+        const hasFloorNeighbor =
+          (x > 0 && zone.tiles[y][x - 1] !== TileType.Wall) ||
+          (x < zone.width - 1 && zone.tiles[y][x + 1] !== TileType.Wall) ||
+          (y > 0 && zone.tiles[y - 1][x] !== TileType.Wall) ||
+          (y < zone.height - 1 && zone.tiles[y + 1][x] !== TileType.Wall);
+
+        if (!hasFloorNeighbor) {
+          continue;
+        }
+
+        const screen = gridToScreen(x, y, origin.x, origin.y);
+        const depth = depthForGridCell(x, y, FLOOR_LAYER);
+
+        const top = this.add
+          .image(screen.x, screen.y - WALL_RISE / 2, "hedge-top")
+          .setOrigin(0.5, 0.5);
+        top.setDepth(depth);
+
+        const face = this.add
+          .image(screen.x - TILE_WIDTH / 4, screen.y, "wall-face")
+          .setOrigin(0.5, 1);
+        face.setDepth(depth - 0.05);
+      }
     }
-    const { x, y } = zone.shrineInteract;
-    const screen = gridToScreen(x, y, origin.x, origin.y);
-    const marker = this.add
-      .image(screen.x, screen.y, "iso-tile")
-      .setOrigin(0.5, 0.5)
-      .setTint(SHRINE_GLOW)
-      .setAlpha(0.55);
-    marker.setDepth(depthForGridCell(x, y, FLOOR_LAYER + 0.1));
+  }
+
+  private drawProps(zone: ZoneDefinition): void {
+    const origin = this.worldOrigin;
+    const gateOpen = worldState.overworldUnlocked;
+
+    for (const prop of getZoneProps(zone.id)) {
+      const screen = gridToScreen(prop.x, prop.y, origin.x, origin.y);
+      const key = propTextureKey(
+        prop.kind,
+        prop.kind === "gate" ? gateOpen : true,
+      );
+      const propSprite = this.add
+        .image(screen.x, screen.y - TILE_HEIGHT / 2 + 4, key)
+        .setOrigin(0.5, 1);
+      propSprite.setDepth(depthForGridCell(prop.x, prop.y, 0.45));
+    }
   }
 
   private isOnShrineTile(): boolean {
@@ -313,82 +402,18 @@ export class IsometricScene extends Phaser.Scene {
     this.scene.launch("ShrineScene");
   }
 
-  private drawWalls(
-    zone: ZoneDefinition,
-    origin: { x: number; y: number },
-  ): void {
-    for (let y = 0; y < zone.height; y++) {
-      for (let x = 0; x < zone.width; x++) {
-        if (zone.tiles[y][x] !== TileType.Wall) {
-          continue;
-        }
-
-        const hasFloorNeighbor =
-          (x > 0 && zone.tiles[y][x - 1] !== TileType.Wall) ||
-          (x < zone.width - 1 && zone.tiles[y][x + 1] !== TileType.Wall) ||
-          (y > 0 && zone.tiles[y - 1][x] !== TileType.Wall) ||
-          (y < zone.height - 1 && zone.tiles[y + 1][x] !== TileType.Wall);
-
-        if (!hasFloorNeighbor) {
-          continue;
-        }
-
-        const screen = gridToScreen(x, y, origin.x, origin.y);
-        const wall = this.add
-          .image(screen.x, screen.y, "iso-tile")
-          .setOrigin(0.5, 0.5)
-          .setTint(WALL_TINT)
-          .setAlpha(0.9);
-        wall.setDepth(depthForGridCell(x, y, FLOOR_LAYER));
-      }
-    }
-  }
-
   private syncPlayerToGrid(): void {
-    const zone = getZone(this.currentZoneId);
-    const origin = this.getGridOrigin(zone);
     const screen = gridToScreen(
       this.playerGridX,
       this.playerGridY,
-      origin.x,
-      origin.y,
+      this.worldOrigin.x,
+      this.worldOrigin.y,
     );
 
-    this.player.setPosition(screen.x, screen.y - TILE_HEIGHT / 2);
+    this.player.setPosition(screen.x, screen.y - TILE_HEIGHT / 2 + 2);
     this.player.setDepth(
       depthForGridCell(this.playerGridX, this.playerGridY, PLAYER_LAYER),
     );
-  }
-
-  private getGridOrigin(zone: ZoneDefinition): { x: number; y: number } {
-    const center = gridToScreen(
-      (zone.width - 1) / 2,
-      (zone.height - 1) / 2,
-      0,
-      0,
-    );
-
-    return {
-      x: this.scale.width / 2 - center.x,
-      y: this.scale.height / 2 - center.y,
-    };
-  }
-
-  private repositionZone(): void {
-    const zone = getZone(this.currentZoneId);
-    const savedX = this.playerGridX;
-    const savedY = this.playerGridY;
-
-    this.children.removeAll(true);
-    this.shrinePrompt = undefined;
-    this.drawZoneTiles(zone);
-    this.renderHud(zone);
-
-    this.playerGridX = savedX;
-    this.playerGridY = savedY;
-    this.player = this.add.image(0, 0, "player").setOrigin(0.5, 1);
-    this.syncPlayerToGrid();
-    this.updateShrinePrompt();
   }
 
   private renderHud(zone: ZoneDefinition): void {
