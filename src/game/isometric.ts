@@ -24,3 +24,12 @@ export function isWithinGrid(
 ): boolean {
   return gridX >= 0 && gridY >= 0 && gridX < width && gridY < height;
 }
+
+/** Render depth for a grid cell; higher values draw in front (closer to camera). */
+export function depthForGridCell(
+  gridX: number,
+  gridY: number,
+  layer = 0,
+): number {
+  return gridX + gridY + layer;
+}
