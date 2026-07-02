@@ -184,12 +184,12 @@ export class ShrineScene extends Phaser.Scene {
 
   private renderCraftTab(): void {
     const cx = this.scale.width / 2;
-    let y = this.scale.height / 2 - 60;
+    let y = this.scale.height / 2 - 75;
 
     for (const recipe of CRAFT_RECIPES) {
       const row = this.buildRecipeRow(cx, y, recipe);
       this.contentContainer.add(row);
-      y += 70;
+      y += 55;
     }
   }
 
