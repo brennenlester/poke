@@ -312,9 +312,16 @@ export class ShrineScene extends Phaser.Scene {
     const eligible = getEligibleCreaturesForItem(itemId).filter(
       (entry) => entry.eligible,
     );
+    const allCandidates = getEligibleCreaturesForItem(itemId);
     if (eligible.length === 0) {
+      const alreadyApplied = allCandidates.some(
+        (e) => e.reason === "Already applied",
+      );
+      const message = alreadyApplied
+        ? "Fusion already applied to all eligible creatures."
+        : "No creatures at the required level.";
       const none = this.add
-        .text(cx, cy, "No creatures at the required level.", {
+        .text(cx, cy, message, {
           color: MOON_MUTED,
           fontFamily: "system-ui, sans-serif",
           fontSize: "14px",

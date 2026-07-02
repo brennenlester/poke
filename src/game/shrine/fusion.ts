@@ -87,6 +87,7 @@ function applyEffect(
 
       creature.definitionId = effect.evolvesTo;
       creature.attackBonus = 0;
+      creature.hpBonus = 0;
       creature.secondaryElement = undefined;
       creature.secondaryMove = undefined;
 

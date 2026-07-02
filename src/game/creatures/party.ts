@@ -45,6 +45,9 @@ export function getPartySummary(): string {
     if (c.secondaryElement) {
       buffs.push(`+${c.secondaryElement}`);
     }
+    if (c.attackBonus) {
+      buffs.push(`+${c.attackBonus}atk`);
+    }
     if (c.hpBonus) {
       buffs.push(`+${c.hpBonus}hp`);
     }
