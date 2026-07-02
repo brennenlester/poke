@@ -124,6 +124,38 @@ export const CREATURES: CreatureDefinition[] = [
       { id: "bolt", name: "Bolt", power: 12 },
     ],
   },
+  {
+    id: "bramblewarden",
+    name: "Bramblewarden",
+    folkloreType: "woodland",
+    maxHp: 42,
+    attack: 9,
+    defense: 7,
+    spriteKey: "creature-bramblewarden",
+    spriteColor: 0x3a7a32,
+    early: true,
+    moves: [
+      { id: "bramble", name: "Bramble", power: 10 },
+      { id: "ward", name: "Ward", power: 8 },
+      { id: "spore", name: "Spore", power: 9 },
+    ],
+  },
+  {
+    id: "hearthflame",
+    name: "Hearthflame",
+    folkloreType: "hearth",
+    maxHp: 34,
+    attack: 12,
+    defense: 5,
+    spriteKey: "creature-hearthflame",
+    spriteColor: 0xff6020,
+    early: true,
+    moves: [
+      { id: "blaze", name: "Blaze", power: 12 },
+      { id: "kindle", name: "Kindle", power: 11 },
+      { id: "warmth", name: "Warmth", power: 7 },
+    ],
+  },
 ];
 
 const byId = new Map(CREATURES.map((c) => [c.id, c]));

@@ -1,0 +1,36 @@
+import type { CreatureInstance } from "../creatures/types";
+
+export const XP_PER_SPAR_WIN = 10;
+
+/** Cumulative XP required to reach each level. */
+export const LEVEL_XP_THRESHOLDS: Record<number, number> = {
+  1: 0,
+  2: 10,
+  3: 20,
+  4: 30,
+  5: 40,
+};
+
+export const MAX_LEVEL = 5;
+
+export function getLevelForXp(xp: number): number {
+  let level = 1;
+  for (let lv = MAX_LEVEL; lv >= 1; lv--) {
+    if (xp >= LEVEL_XP_THRESHOLDS[lv]) {
+      level = lv;
+      break;
+    }
+  }
+  return level;
+}
+
+export function grantSparXp(creature: CreatureInstance, amount = XP_PER_SPAR_WIN): number {
+  const prevLevel = creature.level;
+  creature.xp += amount;
+  creature.level = getLevelForXp(creature.xp);
+  return creature.level - prevLevel;
+}
+
+export function createNewCreatureProgress(): Pick<CreatureInstance, "level" | "xp"> {
+  return { level: 1, xp: 0 };
+}

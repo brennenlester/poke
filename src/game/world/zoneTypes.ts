@@ -27,4 +27,6 @@ export type ZoneDefinition = {
   defaultSpawn?: { x: number; y: number };
   lightTint: number;
   darkTint: number;
+  /** Optional interact point (e.g. Moon Shrine crafting altar). */
+  shrineInteract?: { x: number; y: number };
 };

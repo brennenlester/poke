@@ -1,6 +1,10 @@
 import Phaser from "phaser";
 import { getCreatureDefinition } from "../creatures/catalog";
-import { playerParty } from "../creatures/party";
+import {
+  getEffectiveAttack,
+  getEffectiveMaxHp,
+  playerParty,
+} from "../creatures/party";
 import { ensureCreatureTextures } from "../creatures/sprites";
 import type { BattleCombatant, MoveDefinition } from "../creatures/types";
 import {
@@ -9,6 +13,10 @@ import {
   isFainted,
   pickRandomMove,
 } from "../battle/battleLogic";
+import {
+  formatRewardMessage,
+  grantSparRewards,
+} from "../battle/sparRewards";
 
 type WandererPartner = {
   name: string;
@@ -19,6 +27,7 @@ type WandererPartner = {
 };
 
 export class BattleScene extends Phaser.Scene {
+  private wildCreatureId!: string;
   private wild!: BattleCombatant;
   private player!: BattleCombatant;
   private partyInstanceIndex = -1;
@@ -39,6 +48,7 @@ export class BattleScene extends Phaser.Scene {
     wildCreatureId: string;
     wandererPartner: WandererPartner;
   }): void {
+    this.wildCreatureId = data.wildCreatureId;
     this.waitingForPlayer = true;
     this.partyInstanceIndex = -1;
     this.forcedSwitch = false;
@@ -122,13 +132,17 @@ export class BattleScene extends Phaser.Scene {
   private combatantFromPartyIndex(index: number): BattleCombatant {
     const partyCreature = playerParty.creatures[index];
     const def = getCreatureDefinition(partyCreature.definitionId);
+    const moves = [...def.moves];
+    if (partyCreature.secondaryMove) {
+      moves.push(partyCreature.secondaryMove);
+    }
     return {
       name: def.name,
-      maxHp: def.maxHp,
+      maxHp: getEffectiveMaxHp(partyCreature),
       currentHp: partyCreature.currentHp,
-      attack: def.attack,
+      attack: getEffectiveAttack(partyCreature),
       defense: def.defense,
-      moves: def.moves,
+      moves,
     };
   }
 
@@ -240,11 +254,12 @@ export class BattleScene extends Phaser.Scene {
       const def = getCreatureDefinition(creature.definitionId);
       const isActive = index === this.partyInstanceIndex;
       const fainted = creature.currentHp <= 0;
+      const maxHp = getEffectiveMaxHp(creature);
       const label = fainted
-        ? `${def.name} (fainted)`
+        ? `${def.name} Lv.${creature.level} (fainted)`
         : isActive
-          ? `${def.name} (active)`
-          : `${def.name} (${creature.currentHp}/${def.maxHp} HP)`;
+          ? `${def.name} Lv.${creature.level} (active)`
+          : `${def.name} Lv.${creature.level} (${creature.currentHp}/${maxHp} HP)`;
 
       const btn = this.add
         .text(cx, rowY, label, {
@@ -376,15 +391,19 @@ export class BattleScene extends Phaser.Scene {
   private endBattle(playerWon: boolean): void {
     this.waitingForPlayer = false;
     this.hideSwitchMenu();
-    this.log(
-      playerWon
-        ? "You won the training spar!"
-        : "You lost the training spar...",
-    );
-
     this.syncActivePartyHp();
 
-    this.time.delayedCall(1200, () => {
+    if (playerWon) {
+      const reward = grantSparRewards(
+        this.wildCreatureId,
+        this.partyInstanceIndex,
+      );
+      this.log(formatRewardMessage(reward));
+    } else {
+      this.log("You lost the training spar...");
+    }
+
+    this.time.delayedCall(1800, () => {
       this.scene.stop("BattleScene");
       this.scene.stop("EncounterScene");
       this.scene.resume("IsometricScene");
