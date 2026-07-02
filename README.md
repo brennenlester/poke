@@ -33,6 +33,9 @@ The confined starting region has three zones — **Whisper Grove** → **Moon Sh
 - `src/game/` — Phaser 3 game bootstrap and scenes
 - `src/game/isometric.ts` — isometric grid ↔ screen coordinate helpers
 - `src/game/world/` — zone maps, collision, `worldState.overworldUnlocked`
+- `src/game/creatures/` — folklore creature catalog and party collection
+- `src/game/encounters/` — zone encounter tables
+- Walk in zones to trigger random encounters; choose **Befriend**, **Spar**, or **Flee**
 - `AGENTS.md` — agent workflow conventions
 
 ## License
