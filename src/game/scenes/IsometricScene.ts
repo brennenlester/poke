@@ -27,7 +27,8 @@ import {
 
 const FLOOR_LAYER = 0;
 const PROP_LAYER = 0.45;
-const PLAYER_LAYER = 0.5;
+/** Fixed depth above all tiles, walls, and props; below HUD (10_000 + scrollFactor 0). */
+const PLAYER_DEPTH = 20_000;
 const MOVE_SPEED = 6;
 const ENCOUNTER_TRAVEL_THRESHOLD = 0.75;
 const ENCOUNTER_CHANCE = 0.10;
@@ -394,9 +395,7 @@ export class IsometricScene extends Phaser.Scene {
       screen.x,
       screen.y + TILE_HEIGHT / 2 - 2,
     );
-    this.player.setDepth(
-      depthForGridCell(this.playerGridX, this.playerGridY, PLAYER_LAYER),
-    );
+    this.player.setDepth(PLAYER_DEPTH);
   }
 
   private renderHud(zone: ZoneDefinition): void {
