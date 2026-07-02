@@ -25,6 +25,8 @@ export const MATERIAL_NAMES: Record<string, string> = {
 export const ITEM_NAMES: Record<string, string> = {
   "ember-charm": "Ember Charm",
   "moss-salve": "Moss Salve",
+  "brook-tonic": "Brook Tonic",
+  "moonwake-draught": "Moonwake Draught",
 };
 
 export function getMaterialForCreature(creatureId: string): string | undefined {

@@ -12,6 +12,14 @@ import {
 } from "../inventory/playerInventory";
 import { applyShrineFusion, getEligibleCreaturesForItem } from "../shrine/fusion";
 import { getEffectsForItem } from "../shrine/shrineEffects";
+import {
+  applyConsumable,
+  CONSUMABLE_ITEM_IDS,
+  FUSION_ITEM_IDS,
+  getConsumable,
+  getEligibleCreaturesForConsumable,
+  isConsumableItem,
+} from "../shrine/consumables";
 
 const MOON_PANEL = 0x2a2440;
 const MOON_STROKE = 0xc8b8e8;
@@ -19,7 +27,7 @@ const MOON_ACCENT = 0x8a7aa8;
 const MOON_TEXT = "#e8dff8";
 const MOON_MUTED = "#b8a8d0";
 
-type Tab = "craft" | "fusion";
+type Tab = "craft" | "fusion" | "use";
 
 export class ShrineScene extends Phaser.Scene {
   private activeTab: Tab = "craft";
@@ -61,7 +69,7 @@ export class ShrineScene extends Phaser.Scene {
       .setOrigin(0.5);
 
     this.add
-      .text(cx, cy - 138, "Craft relics and fuse them with your companions", {
+      .text(cx, cy - 138, "Craft relics, use tonics, or fuse with companions", {
         color: MOON_MUTED,
         fontFamily: "system-ui, sans-serif",
         fontSize: "13px",
@@ -123,10 +131,11 @@ export class ShrineScene extends Phaser.Scene {
     this.tabButtons = [];
     const tabs: { id: Tab; label: string }[] = [
       { id: "craft", label: "Craft" },
+      { id: "use", label: "Use" },
       { id: "fusion", label: "Fusion" },
     ];
 
-    let x = cx - 70;
+    let x = cx - 120;
     for (const tab of tabs) {
       const btn = this.add
         .text(x, y, tab.label, {
@@ -134,8 +143,8 @@ export class ShrineScene extends Phaser.Scene {
           backgroundColor:
             this.activeTab === tab.id ? "#e0d4f0" : "#4a3a68",
           fontFamily: "system-ui, sans-serif",
-          fontSize: "16px",
-          padding: { x: 20, y: 8 },
+          fontSize: "15px",
+          padding: { x: 16, y: 8 },
         })
         .setOrigin(0.5)
         .setInteractive({ useHandCursor: true });
@@ -147,13 +156,13 @@ export class ShrineScene extends Phaser.Scene {
         this.renderTabContent();
       });
       this.tabButtons.push(btn);
-      x += 100;
+      x += 90;
     }
   }
 
   private refreshTabs(): void {
-    const labels = ["Craft", "Fusion"];
-    const ids: Tab[] = ["craft", "fusion"];
+    const labels = ["Craft", "Use", "Fusion"];
+    const ids: Tab[] = ["craft", "use", "fusion"];
     this.tabButtons.forEach((btn, i) => {
       const active = this.activeTab === ids[i];
       btn.setColor(active ? "#1a1a2e" : MOON_TEXT);
@@ -166,6 +175,8 @@ export class ShrineScene extends Phaser.Scene {
     this.contentContainer.removeAll(true);
     if (this.activeTab === "craft") {
       this.renderCraftTab();
+    } else if (this.activeTab === "use") {
+      this.renderUseTab();
     } else {
       this.renderFusionTab();
     }
@@ -173,12 +184,12 @@ export class ShrineScene extends Phaser.Scene {
 
   private renderCraftTab(): void {
     const cx = this.scale.width / 2;
-    let y = this.scale.height / 2 - 60;
+    let y = this.scale.height / 2 - 75;
 
     for (const recipe of CRAFT_RECIPES) {
       const row = this.buildRecipeRow(cx, y, recipe);
       this.contentContainer.add(row);
-      y += 70;
+      y += 55;
     }
   }
 
@@ -229,9 +240,7 @@ export class ShrineScene extends Phaser.Scene {
     const cx = this.scale.width / 2;
     const cy = this.scale.height / 2;
 
-    const ownedItems = ["ember-charm", "moss-salve"].filter(
-      (id) => getItemCount(id) > 0,
-    );
+    const ownedItems = FUSION_ITEM_IDS.filter((id) => getItemCount(id) > 0);
 
     if (ownedItems.length === 0) {
       const empty = this.add
@@ -348,6 +357,150 @@ export class ShrineScene extends Phaser.Scene {
 
       btn.on("pointerdown", () => {
         const result = applyShrineFusion(entry.instanceId, itemId);
+        this.setStatus(result.message);
+        if (result.ok) {
+          this.selectedItemId = null;
+        }
+        this.renderTabContent();
+      });
+      this.contentContainer.add(btn);
+      y += 38;
+    }
+  }
+
+  private renderUseTab(): void {
+    const cx = this.scale.width / 2;
+    const cy = this.scale.height / 2;
+
+    const consumableIds = CONSUMABLE_ITEM_IDS.filter(
+      (id) => getItemCount(id) > 0,
+    );
+
+    if (consumableIds.length === 0) {
+      const empty = this.add
+        .text(cx, cy - 20, "Craft Brook Tonic or Moonwake Draught first.", {
+          color: MOON_MUTED,
+          fontFamily: "system-ui, sans-serif",
+          fontSize: "15px",
+        })
+        .setOrigin(0.5);
+      this.contentContainer.add(empty);
+      return;
+    }
+
+    if (!this.selectedItemId || !isConsumableItem(this.selectedItemId)) {
+      const prompt = this.add
+        .text(cx, cy - 70, "Choose a consumable:", {
+          color: MOON_TEXT,
+          fontFamily: "system-ui, sans-serif",
+          fontSize: "15px",
+        })
+        .setOrigin(0.5);
+      this.contentContainer.add(prompt);
+
+      let y = cy - 30;
+      for (const itemId of consumableIds) {
+        const consumable = getConsumable(itemId)!;
+        const effectLabel =
+          consumable.effectType === "heal" ? "heals 50% HP" : "revives fainted";
+        const btn = this.add
+          .text(
+            cx,
+            y,
+            `${getItemName(itemId)} (×${getItemCount(itemId)}) — ${effectLabel}`,
+            {
+              color: "#1a1a2e",
+              backgroundColor: "#c8b8e8",
+              fontFamily: "system-ui, sans-serif",
+              fontSize: "13px",
+              padding: { x: 12, y: 8 },
+            },
+          )
+          .setOrigin(0.5)
+          .setInteractive({ useHandCursor: true });
+
+        btn.on("pointerdown", () => {
+          this.selectedItemId = itemId;
+          this.renderTabContent();
+        });
+        this.contentContainer.add(btn);
+        y += 44;
+      }
+      return;
+    }
+
+    const itemId = this.selectedItemId;
+    const consumable = getConsumable(itemId)!;
+    const effectLabel =
+      consumable.effectType === "heal"
+        ? "Heals injured creatures by 50% max HP"
+        : "Revives fainted creatures to 50% max HP";
+
+    const header = this.add
+      .text(cx, cy - 80, `${getItemName(itemId)} — ${effectLabel}`, {
+        color: MOON_MUTED,
+        fontFamily: "system-ui, sans-serif",
+        fontSize: "12px",
+        align: "center",
+        wordWrap: { width: 400 },
+      })
+      .setOrigin(0.5);
+    this.contentContainer.add(header);
+
+    const back = this.add
+      .text(cx - 180, cy - 80, "← Back", {
+        color: MOON_TEXT,
+        fontFamily: "system-ui, sans-serif",
+        fontSize: "13px",
+      })
+      .setOrigin(0, 0.5)
+      .setInteractive({ useHandCursor: true })
+      .on("pointerdown", () => {
+        this.selectedItemId = null;
+        this.renderTabContent();
+      });
+    this.contentContainer.add(back);
+
+    const eligible = getEligibleCreaturesForConsumable(itemId).filter(
+      (entry) => entry.eligible,
+    );
+    if (eligible.length === 0) {
+      const message =
+        consumable.effectType === "heal"
+          ? "No injured creatures to heal."
+          : "No fainted creatures to revive.";
+      const none = this.add
+        .text(cx, cy, message, {
+          color: MOON_MUTED,
+          fontFamily: "system-ui, sans-serif",
+          fontSize: "14px",
+        })
+        .setOrigin(0.5);
+      this.contentContainer.add(none);
+      return;
+    }
+
+    let y = cy - 40;
+    for (const entry of eligible) {
+      const hpLabel =
+        entry.currentHp <= 0
+          ? "fainted"
+          : `${entry.currentHp}/${entry.maxHp} HP`;
+      const label = `${entry.name} Lv.${entry.level} (${hpLabel})`;
+
+      const btn = this.add
+        .text(cx, y, label, {
+          color: "#1a1a2e",
+          backgroundColor: "#e0d4f0",
+          fontFamily: "system-ui, sans-serif",
+          fontSize: "14px",
+          padding: { x: 12, y: 6 },
+        })
+        .setOrigin(0.5)
+        .setInteractive({ useHandCursor: true });
+
+      btn.on("pointerdown", () => {
+        const result = applyConsumable(entry.instanceId, itemId);
         this.setStatus(result.message);
         if (result.ok) {
           this.selectedItemId = null;

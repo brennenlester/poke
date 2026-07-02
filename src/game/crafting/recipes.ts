@@ -30,6 +30,25 @@ export const CRAFT_RECIPES: CraftRecipe[] = [
       { materialId: "folklore-dust", count: 1 },
     ],
   },
+  {
+    id: "brook-tonic",
+    name: "Brook Tonic",
+    outputItemId: "brook-tonic",
+    materials: [
+      { materialId: "brook-pearl", count: 2 },
+      { materialId: "folklore-dust", count: 1 },
+    ],
+  },
+  {
+    id: "moonwake-draught",
+    name: "Moonwake Draught",
+    outputItemId: "moonwake-draught",
+    materials: [
+      { materialId: "moss-fiber", count: 1 },
+      { materialId: "brook-pearl", count: 1 },
+      { materialId: "folklore-dust", count: 1 },
+    ],
+  },
 ];
 
 export function canCraft(recipe: CraftRecipe): boolean {
