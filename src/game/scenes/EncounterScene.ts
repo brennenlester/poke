@@ -13,9 +13,9 @@ const WANDERER_PARTNER = {
 
 const PANEL_WIDTH = 420;
 const PANEL_HEIGHT = 280;
-const PANEL_PADDING = 24;
-const SPRITE_COLUMN_WIDTH = 88;
-const BUTTON_SPACING = 100;
+const PANEL_PADDING = 32;
+const SPRITE_COLUMN_WIDTH = 76;
+const TEXT_INSET = 8;
 
 const TEXT_STYLE = {
   fontFamily: "system-ui, sans-serif",
@@ -46,10 +46,11 @@ export class EncounterScene extends Phaser.Scene {
     const panelX = this.scale.width / 2;
     const panelY = this.scale.height / 2;
     const panelLeft = panelX - PANEL_WIDTH / 2;
-    const textColumnWidth =
-      PANEL_WIDTH - PANEL_PADDING * 2 - SPRITE_COLUMN_WIDTH;
-    const textX =
-      panelLeft + PANEL_PADDING + SPRITE_COLUMN_WIDTH + textColumnWidth / 2;
+    const innerLeft = panelLeft + PANEL_PADDING;
+    const innerRight = panelLeft + PANEL_WIDTH - PANEL_PADDING;
+    const innerWidth = innerRight - innerLeft;
+    const textLeft = innerLeft + SPRITE_COLUMN_WIDTH + TEXT_INSET;
+    const textColumnWidth = innerRight - textLeft - TEXT_INSET;
 
     this.add
       .rectangle(panelX, panelY, PANEL_WIDTH, PANEL_HEIGHT, 0x2a2a3e, 0.95)
@@ -57,42 +58,46 @@ export class EncounterScene extends Phaser.Scene {
 
     this.add
       .image(
-        panelLeft + PANEL_PADDING + SPRITE_COLUMN_WIDTH / 2,
-        panelY - 28,
+        innerLeft + SPRITE_COLUMN_WIDTH / 2,
+        panelY - 30,
         def.spriteKey,
       )
       .setScale(1.5)
       .setOrigin(0.5);
 
     this.add
-      .text(textX, panelY - 58, `A wild ${def.name} appeared!`, {
+      .text(textLeft, panelY - 62, `A wild ${def.name} appeared!`, {
         ...TEXT_STYLE,
         color: "#f0e6d2",
-        fontSize: "20px",
-        align: "center",
-        wordWrap: { width: textColumnWidth },
+        fontSize: "18px",
+        align: "left",
+        wordWrap: { width: textColumnWidth, useAdvancedWrap: true },
       })
-      .setOrigin(0.5, 0.5);
+      .setOrigin(0, 0.5);
 
     this.add
-      .text(textX, panelY - 24, `Type: ${def.folkloreType}`, {
+      .text(textLeft, panelY - 28, `Type: ${def.folkloreType}`, {
         ...TEXT_STYLE,
         color: "#c8b8a0",
         fontSize: "14px",
-        align: "center",
-        wordWrap: { width: textColumnWidth },
+        align: "left",
+        wordWrap: { width: textColumnWidth, useAdvancedWrap: true },
       })
-      .setOrigin(0.5, 0.5);
+      .setOrigin(0, 0.5);
 
-    const buttonY = panelY + 72;
-    const buttonStartX = panelX - BUTTON_SPACING;
-    this.addButton(buttonStartX, buttonY, "Befriend", () => this.tryBefriend());
-    this.addButton(buttonStartX + BUTTON_SPACING, buttonY, "Spar", () =>
-      this.startSpar(),
-    );
-    this.addButton(buttonStartX + BUTTON_SPACING * 2, buttonY, "Flee", () =>
-      this.flee(),
-    );
+    const buttonY = panelY + 68;
+    const buttonLabels = ["Befriend", "Spar", "Flee"] as const;
+    const buttonActions = [
+      () => this.tryBefriend(),
+      () => this.startSpar(),
+      () => this.flee(),
+    ] as const;
+    const buttonSlotWidth = innerWidth / buttonLabels.length;
+
+    buttonLabels.forEach((label, index) => {
+      const buttonX = innerLeft + buttonSlotWidth * (index + 0.5);
+      this.addButton(buttonX, buttonY, label, buttonActions[index]);
+    });
   }
 
   private addButton(
@@ -107,7 +112,7 @@ export class EncounterScene extends Phaser.Scene {
         backgroundColor: "#f0e6d2",
         ...TEXT_STYLE,
         fontSize: "16px",
-        padding: { x: 12, y: 8 },
+        padding: { x: 10, y: 8 },
       })
       .setOrigin(0.5)
       .setInteractive({ useHandCursor: true });
@@ -144,7 +149,10 @@ export class EncounterScene extends Phaser.Scene {
         color: "#f0e6d2",
         fontSize: "18px",
         align: "center",
-        wordWrap: { width: PANEL_WIDTH - PANEL_PADDING * 2 },
+        wordWrap: {
+          width: PANEL_WIDTH - PANEL_PADDING * 2,
+          useAdvancedWrap: true,
+        },
       })
       .setOrigin(0.5);
     this.time.delayedCall(900, () => {
