@@ -1,7 +1,6 @@
 import { getCreatureDefinition } from "../creatures/catalog";
 import {
   getCreatureInstance,
-  getEffectiveAttack,
   getEffectiveMaxHp,
   playerParty,
 } from "../creatures/party";
@@ -93,7 +92,6 @@ function applyEffect(
 
       const newMax = getEffectiveMaxHp(creature);
       creature.currentHp = Math.max(1, Math.round(newMax * hpRatio));
-      void getEffectiveAttack(creature);
       return `${prevName} evolved into ${newDef.name}!`;
     }
   }

@@ -181,12 +181,14 @@ export class IsometricScene extends Phaser.Scene {
     const zone = getZone(zoneId);
 
     this.children.removeAll(true);
+    this.shrinePrompt = undefined;
     this.createPlaceholderTextures();
     this.drawZoneTiles(zone);
     this.renderHud(zone);
 
     this.player = this.add.image(0, 0, "player").setOrigin(0.5, 1);
     this.syncPlayerToGrid();
+    this.updateShrinePrompt();
   }
 
   private createPlaceholderTextures(): void {
@@ -378,6 +380,7 @@ export class IsometricScene extends Phaser.Scene {
     const savedY = this.playerGridY;
 
     this.children.removeAll(true);
+    this.shrinePrompt = undefined;
     this.drawZoneTiles(zone);
     this.renderHud(zone);
 
@@ -385,6 +388,7 @@ export class IsometricScene extends Phaser.Scene {
     this.playerGridY = savedY;
     this.player = this.add.image(0, 0, "player").setOrigin(0.5, 1);
     this.syncPlayerToGrid();
+    this.updateShrinePrompt();
   }
 
   private renderHud(zone: ZoneDefinition): void {

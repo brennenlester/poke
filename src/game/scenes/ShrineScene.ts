@@ -100,7 +100,7 @@ export class ShrineScene extends Phaser.Scene {
       .setInteractive({ useHandCursor: true })
       .on("pointerdown", () => this.closeShrine());
 
-    this.input.keyboard?.on("keydown-ESC", () => this.closeShrine());
+    this.input.keyboard?.once("keydown-ESC", () => this.closeShrine());
 
     this.renderTabContent();
   }

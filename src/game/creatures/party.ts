@@ -13,6 +13,7 @@ export function addToParty(definitionId: string): CreatureInstance {
   const instance: CreatureInstance = {
     instanceId: `c-${nextInstanceId++}`,
     definitionId,
+    speciesId: definitionId,
     currentHp: def.maxHp,
     ...createNewCreatureProgress(),
   };
@@ -21,7 +22,7 @@ export function addToParty(definitionId: string): CreatureInstance {
 }
 
 export function hasCreature(definitionId: string): boolean {
-  return playerParty.creatures.some((c) => c.definitionId === definitionId);
+  return playerParty.creatures.some((c) => c.speciesId === definitionId);
 }
 
 export function getEffectiveMaxHp(creature: CreatureInstance): number {
@@ -41,8 +42,8 @@ export function getPartySummary(): string {
   const names = playerParty.creatures.map((c) => {
     const def = getCreatureDefinition(c.definitionId);
     const buffs: string[] = [];
-    if (c.secondaryMove) {
-      buffs.push("+ember");
+    if (c.secondaryElement) {
+      buffs.push(`+${c.secondaryElement}`);
     }
     if (c.hpBonus) {
       buffs.push(`+${c.hpBonus}hp`);

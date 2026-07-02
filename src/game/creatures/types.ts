@@ -21,6 +21,8 @@ export type CreatureDefinition = {
 export type CreatureInstance = {
   instanceId: string;
   definitionId: string;
+  /** Original befriended species; unchanged by evolution. */
+  speciesId: string;
   currentHp: number;
   nickname?: string;
   level: number;
