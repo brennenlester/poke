@@ -22,7 +22,7 @@ npm run preview
 
 Open the dev server in a browser. You should see an isometric tile grid with a placeholder player. Move with **arrow keys** or **WASD** (hold for continuous movement).
 
-At **Moon Shrine**, stand on the glowing altar tile and press **E** to open the shrine UI (craft materials into relics and tonics, use consumables on your party, or fuse relics with creatures).
+At **Moon Shrine**, stand on the moon altar and press **E** to open the shrine UI. The world uses a **rotated square board** (ALttP-style 2.5D) with a camera that follows your character.
 
 ### World zones (dev)
 
