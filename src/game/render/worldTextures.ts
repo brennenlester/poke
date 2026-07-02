@@ -12,8 +12,6 @@ const ZONE_PALETTES: Record<ZoneId, ZonePalette> = {
 };
 
 const WORLD_TEXTURE_KEYS = [
-  "wall-block",
-  "hedge-block",
   "floor-path",
   "boundary-grove",
   "boundary-shrine",
