@@ -21,6 +21,7 @@ type WandererPartner = {
 export class BattleScene extends Phaser.Scene {
   private wild!: BattleCombatant;
   private player!: BattleCombatant;
+  private partyInstanceIndex = -1;
   private logText!: Phaser.GameObjects.Text;
   private playerHpText!: Phaser.GameObjects.Text;
   private wildHpText!: Phaser.GameObjects.Text;
@@ -44,8 +45,12 @@ export class BattleScene extends Phaser.Scene {
       moves: wildDef.moves,
     };
 
-    const partyCreature = playerParty.creatures[0];
+    const activeIndex = playerParty.creatures.findIndex((c) => c.currentHp > 0);
+    const partyCreature =
+      activeIndex >= 0 ? playerParty.creatures[activeIndex] : undefined;
+
     if (partyCreature) {
+      this.partyInstanceIndex = activeIndex;
       const def = getCreatureDefinition(partyCreature.definitionId);
       this.player = {
         name: def.name,
@@ -189,7 +194,10 @@ export class BattleScene extends Phaser.Scene {
         : "You lost the training spar...",
     );
 
-    const partyCreature = playerParty.creatures[0];
+    const partyCreature =
+      this.partyInstanceIndex >= 0
+        ? playerParty.creatures[this.partyInstanceIndex]
+        : undefined;
     if (partyCreature) {
       partyCreature.currentHp = this.player.currentHp;
     }
