@@ -13,7 +13,7 @@ const WANDERER_PARTNER = {
 
 export class EncounterScene extends Phaser.Scene {
   private creatureId!: string;
-  private resolved = false;
+  private actionTaken = false;
 
   constructor() {
     super({ key: "EncounterScene" });
@@ -21,6 +21,7 @@ export class EncounterScene extends Phaser.Scene {
 
   init(data: { creatureId: string }): void {
     this.creatureId = data.creatureId;
+    this.actionTaken = false;
   }
 
   create(): void {
@@ -63,7 +64,7 @@ export class EncounterScene extends Phaser.Scene {
       this.tryBefriend(),
     );
     this.addButton(panelX, panelY + 60, "Spar", () => this.startSpar());
-    this.addButton(panelX + 90, panelY + 60, "Flee", () => this.endEncounter());
+    this.addButton(panelX + 90, panelY + 60, "Flee", () => this.flee());
   }
 
   private addButton(
@@ -87,10 +88,10 @@ export class EncounterScene extends Phaser.Scene {
   }
 
   private tryBefriend(): void {
-    if (this.resolved) {
+    if (this.actionTaken) {
       return;
     }
-    this.resolved = true;
+    this.actionTaken = true;
 
     if (hasCreature(this.creatureId)) {
       this.showResult(
@@ -123,10 +124,10 @@ export class EncounterScene extends Phaser.Scene {
   }
 
   private startSpar(): void {
-    if (this.resolved) {
+    if (this.actionTaken) {
       return;
     }
-    this.resolved = true;
+    this.actionTaken = true;
 
     this.scene.launch("BattleScene", {
       wildCreatureId: this.creatureId,
@@ -135,12 +136,15 @@ export class EncounterScene extends Phaser.Scene {
     this.scene.pause();
   }
 
-  private endEncounter(): void {
-    if (this.resolved) {
+  private flee(): void {
+    if (this.actionTaken) {
       return;
     }
-    this.resolved = true;
+    this.actionTaken = true;
+    this.endEncounter();
+  }
 
+  private endEncounter(): void {
     this.scene.stop("EncounterScene");
     this.scene.resume("IsometricScene");
   }

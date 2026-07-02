@@ -35,6 +35,9 @@ export class BattleScene extends Phaser.Scene {
     wildCreatureId: string;
     wandererPartner: WandererPartner;
   }): void {
+    this.waitingForPlayer = true;
+    this.partyInstanceIndex = -1;
+
     const wildDef = getCreatureDefinition(data.wildCreatureId);
     this.wild = {
       name: wildDef.name,
