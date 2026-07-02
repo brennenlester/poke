@@ -14,8 +14,6 @@ const WANDERER_PARTNER = {
 const PANEL_WIDTH = 420;
 const PANEL_HEIGHT = 280;
 const PANEL_PADDING = 32;
-const SPRITE_COLUMN_WIDTH = 76;
-const TEXT_INSET = 8;
 
 const TEXT_STYLE = {
   fontFamily: "system-ui, sans-serif",
@@ -47,43 +45,38 @@ export class EncounterScene extends Phaser.Scene {
     const panelY = this.scale.height / 2;
     const panelLeft = panelX - PANEL_WIDTH / 2;
     const innerLeft = panelLeft + PANEL_PADDING;
-    const innerRight = panelLeft + PANEL_WIDTH - PANEL_PADDING;
-    const innerWidth = innerRight - innerLeft;
-    const textLeft = innerLeft + SPRITE_COLUMN_WIDTH + TEXT_INSET;
-    const textColumnWidth = innerRight - textLeft - TEXT_INSET;
+    const innerWidth = PANEL_WIDTH - PANEL_PADDING * 2;
 
     this.add
       .rectangle(panelX, panelY, PANEL_WIDTH, PANEL_HEIGHT, 0x2a2a3e, 0.95)
       .setStrokeStyle(2, 0xf0e6d2);
 
     this.add
-      .image(
-        innerLeft + SPRITE_COLUMN_WIDTH / 2,
-        panelY - 30,
-        def.spriteKey,
-      )
+      .image(panelX, panelY - 72, def.spriteKey)
       .setScale(1.5)
       .setOrigin(0.5);
 
-    this.add
-      .text(textLeft, panelY - 62, `A wild ${def.name} appeared!`, {
-        ...TEXT_STYLE,
+    this.addPanelText(
+      panelX,
+      panelY - 24,
+      `A wild ${def.name} appeared!`,
+      innerWidth,
+      {
         color: "#f0e6d2",
         fontSize: "18px",
-        align: "left",
-        wordWrap: { width: textColumnWidth, useAdvancedWrap: true },
-      })
-      .setOrigin(0, 0.5);
+      },
+    );
 
-    this.add
-      .text(textLeft, panelY - 28, `Type: ${def.folkloreType}`, {
-        ...TEXT_STYLE,
+    this.addPanelText(
+      panelX,
+      panelY + 8,
+      `Type: ${def.folkloreType}`,
+      innerWidth,
+      {
         color: "#c8b8a0",
         fontSize: "14px",
-        align: "left",
-        wordWrap: { width: textColumnWidth, useAdvancedWrap: true },
-      })
-      .setOrigin(0, 0.5);
+      },
+    );
 
     const buttonY = panelY + 68;
     const buttonLabels = ["Befriend", "Spar", "Flee"] as const;
@@ -98,6 +91,25 @@ export class EncounterScene extends Phaser.Scene {
       const buttonX = innerLeft + buttonSlotWidth * (index + 0.5);
       this.addButton(buttonX, buttonY, label, buttonActions[index]);
     });
+  }
+
+  private addPanelText(
+    x: number,
+    y: number,
+    content: string,
+    width: number,
+    style: Phaser.Types.GameObjects.Text.TextStyle,
+  ): Phaser.GameObjects.Text {
+    const text = this.add
+      .text(x, y, content, {
+        ...TEXT_STYLE,
+        ...style,
+        align: "center",
+        wordWrap: { width, useAdvancedWrap: true },
+      })
+      .setOrigin(0.5, 0.5);
+    text.setFixedSize(width, 0);
+    return text;
   }
 
   private addButton(
@@ -143,18 +155,16 @@ export class EncounterScene extends Phaser.Scene {
   }
 
   private showResult(message: string): void {
-    const text = this.add
-      .text(this.scale.width / 2, this.scale.height / 2 + 120, message, {
-        ...TEXT_STYLE,
+    const text = this.addPanelText(
+      this.scale.width / 2,
+      this.scale.height / 2 + 120,
+      message,
+      PANEL_WIDTH - PANEL_PADDING * 2,
+      {
         color: "#f0e6d2",
         fontSize: "18px",
-        align: "center",
-        wordWrap: {
-          width: PANEL_WIDTH - PANEL_PADDING * 2,
-          useAdvancedWrap: true,
-        },
-      })
-      .setOrigin(0.5);
+      },
+    );
     this.time.delayedCall(900, () => {
       text.destroy();
       this.endEncounter();
