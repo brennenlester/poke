@@ -161,6 +161,8 @@ export class IsometricScene extends Phaser.Scene {
   }
 
   private repositionGrid(): void {
+    this.tweens.killTweensOf(this.player);
+    this.isMoving = false;
     this.children.removeAll(true);
     this.createPlaceholderTextures();
     this.drawTileGrid();
