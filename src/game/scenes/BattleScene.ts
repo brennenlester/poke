@@ -26,6 +26,10 @@ export class BattleScene extends Phaser.Scene {
   private playerHpText!: Phaser.GameObjects.Text;
   private wildHpText!: Phaser.GameObjects.Text;
   private waitingForPlayer = true;
+  private forcedSwitch = false;
+  private switchMenuOpen = false;
+  private actionButtons: Phaser.GameObjects.Text[] = [];
+  private switchMenuObjects: Phaser.GameObjects.GameObject[] = [];
 
   constructor() {
     super({ key: "BattleScene" });
@@ -37,6 +41,10 @@ export class BattleScene extends Phaser.Scene {
   }): void {
     this.waitingForPlayer = true;
     this.partyInstanceIndex = -1;
+    this.forcedSwitch = false;
+    this.switchMenuOpen = false;
+    this.actionButtons = [];
+    this.switchMenuObjects = [];
 
     const wildDef = getCreatureDefinition(data.wildCreatureId);
     this.wild = {
@@ -54,15 +62,7 @@ export class BattleScene extends Phaser.Scene {
 
     if (partyCreature) {
       this.partyInstanceIndex = activeIndex;
-      const def = getCreatureDefinition(partyCreature.definitionId);
-      this.player = {
-        name: def.name,
-        maxHp: def.maxHp,
-        currentHp: partyCreature.currentHp,
-        attack: def.attack,
-        defense: def.defense,
-        moves: def.moves,
-      };
+      this.player = this.combatantFromPartyIndex(activeIndex);
     } else {
       this.player = {
         name: data.wandererPartner.name,
@@ -104,31 +104,87 @@ export class BattleScene extends Phaser.Scene {
       fontSize: "14px",
     });
 
-    this.logText = this.add.text(cx, 260, "", {
-      color: "#c8b8a0",
-      fontFamily: "system-ui, sans-serif",
-      fontSize: "14px",
-      align: "center",
-      wordWrap: { width: 380 },
-    }).setOrigin(0.5, 0);
+    this.logText = this.add
+      .text(cx, 260, "", {
+        color: "#c8b8a0",
+        fontFamily: "system-ui, sans-serif",
+        fontSize: "14px",
+        align: "center",
+        wordWrap: { width: 380 },
+      })
+      .setOrigin(0.5, 0);
 
     this.refreshHp();
     this.log(`A training spar with ${this.wild.name} begins.`);
+    this.buildActionButtons();
+  }
 
-    let buttonY = 320;
-    for (const move of this.player.moves) {
-      this.addMoveButton(cx, buttonY, move);
-      buttonY += 44;
+  private combatantFromPartyIndex(index: number): BattleCombatant {
+    const partyCreature = playerParty.creatures[index];
+    const def = getCreatureDefinition(partyCreature.definitionId);
+    return {
+      name: def.name,
+      maxHp: def.maxHp,
+      currentHp: partyCreature.currentHp,
+      attack: def.attack,
+      defense: def.defense,
+      moves: def.moves,
+    };
+  }
+
+  private syncActivePartyHp(): void {
+    if (this.partyInstanceIndex < 0) {
+      return;
+    }
+    const partyCreature = playerParty.creatures[this.partyInstanceIndex];
+    if (partyCreature) {
+      partyCreature.currentHp = this.player.currentHp;
     }
   }
 
-  private addMoveButton(
+  private hasSwitchablePartyMembers(): boolean {
+    return playerParty.creatures.some(
+      (creature, index) =>
+        index !== this.partyInstanceIndex && creature.currentHp > 0,
+    );
+  }
+
+  private clearActionButtons(): void {
+    for (const button of this.actionButtons) {
+      button.destroy();
+    }
+    this.actionButtons = [];
+  }
+
+  private buildActionButtons(): void {
+    this.clearActionButtons();
+    this.hideSwitchMenu();
+
+    const cx = this.scale.width / 2;
+    let buttonY = 320;
+
+    if (!this.forcedSwitch) {
+      for (const move of this.player.moves) {
+        this.actionButtons.push(this.addMoveButton(cx, buttonY, move));
+        buttonY += 44;
+      }
+    }
+
+    if (this.hasSwitchablePartyMembers()) {
+      this.actionButtons.push(
+        this.addActionButton(cx, buttonY, "Switch", () => this.showSwitchMenu()),
+      );
+    }
+  }
+
+  private addActionButton(
     x: number,
     y: number,
-    move: MoveDefinition,
-  ): void {
+    label: string,
+    onClick: () => void,
+  ): Phaser.GameObjects.Text {
     const btn = this.add
-      .text(x, y, move.name, {
+      .text(x, y, label, {
         color: "#1a1a2e",
         backgroundColor: "#c8dce8",
         fontFamily: "system-ui, sans-serif",
@@ -138,12 +194,131 @@ export class BattleScene extends Phaser.Scene {
       .setOrigin(0.5)
       .setInteractive({ useHandCursor: true });
 
-    btn.on("pointerdown", () => {
-      if (!this.waitingForPlayer) {
+    btn.on("pointerdown", onClick);
+    return btn;
+  }
+
+  private addMoveButton(
+    x: number,
+    y: number,
+    move: MoveDefinition,
+  ): Phaser.GameObjects.Text {
+    return this.addActionButton(x, y, move.name, () => {
+      if (!this.waitingForPlayer || this.switchMenuOpen) {
         return;
       }
       this.playerTurn(move);
     });
+  }
+
+  private showSwitchMenu(): void {
+    if (!this.waitingForPlayer || this.switchMenuOpen) {
+      return;
+    }
+
+    this.switchMenuOpen = true;
+    const cx = this.scale.width / 2;
+    const panelY = this.scale.height / 2;
+
+    const panel = this.add
+      .rectangle(cx, panelY, 320, 220, 0x2a2a3e, 0.98)
+      .setStrokeStyle(2, 0xf0e6d2);
+    this.switchMenuObjects.push(panel);
+
+    const title = this.add
+      .text(cx, panelY - 90, "Choose a creature", {
+        color: "#f0e6d2",
+        fontFamily: "system-ui, sans-serif",
+        fontSize: "16px",
+      })
+      .setOrigin(0.5);
+    this.switchMenuObjects.push(title);
+
+    let rowY = panelY - 50;
+    for (let index = 0; index < playerParty.creatures.length; index++) {
+      const creature = playerParty.creatures[index];
+      const def = getCreatureDefinition(creature.definitionId);
+      const isActive = index === this.partyInstanceIndex;
+      const fainted = creature.currentHp <= 0;
+      const label = fainted
+        ? `${def.name} (fainted)`
+        : isActive
+          ? `${def.name} (active)`
+          : `${def.name} (${creature.currentHp}/${def.maxHp} HP)`;
+
+      const btn = this.add
+        .text(cx, rowY, label, {
+          color: fainted || isActive ? "#888888" : "#1a1a2e",
+          backgroundColor: fainted || isActive ? "#4a4a5a" : "#f0e6d2",
+          fontFamily: "system-ui, sans-serif",
+          fontSize: "14px",
+          padding: { x: 10, y: 6 },
+        })
+        .setOrigin(0.5);
+
+      if (!fainted && !isActive) {
+        btn.setInteractive({ useHandCursor: true });
+        btn.on("pointerdown", () => this.switchToPartyIndex(index));
+      }
+
+      this.switchMenuObjects.push(btn);
+      rowY += 36;
+    }
+
+    const cancel = this.add
+      .text(cx, panelY + 80, "Cancel", {
+        color: "#1a1a2e",
+        backgroundColor: "#c8b8a0",
+        fontFamily: "system-ui, sans-serif",
+        fontSize: "14px",
+        padding: { x: 10, y: 6 },
+      })
+      .setOrigin(0.5)
+      .setInteractive({ useHandCursor: true });
+
+    cancel.on("pointerdown", () => {
+      if (this.forcedSwitch) {
+        return;
+      }
+      this.hideSwitchMenu();
+    });
+    this.switchMenuObjects.push(cancel);
+  }
+
+  private hideSwitchMenu(): void {
+    for (const object of this.switchMenuObjects) {
+      object.destroy();
+    }
+    this.switchMenuObjects = [];
+    this.switchMenuOpen = false;
+  }
+
+  private switchToPartyIndex(index: number): void {
+    const creature = playerParty.creatures[index];
+    if (
+      !creature ||
+      index === this.partyInstanceIndex ||
+      creature.currentHp <= 0
+    ) {
+      return;
+    }
+
+    const voluntarySwitch = !this.forcedSwitch;
+    this.syncActivePartyHp();
+    this.partyInstanceIndex = index;
+    this.player = this.combatantFromPartyIndex(index);
+    this.forcedSwitch = false;
+    this.hideSwitchMenu();
+    this.refreshHp();
+    this.log(`Go, ${this.player.name}!`);
+    this.buildActionButtons();
+
+    if (voluntarySwitch) {
+      this.waitingForPlayer = false;
+      this.time.delayedCall(500, () => this.wildTurn());
+    } else {
+      this.waitingForPlayer = true;
+    }
   }
 
   private playerTurn(move: MoveDefinition): void {
@@ -169,6 +344,15 @@ export class BattleScene extends Phaser.Scene {
     this.refreshHp();
 
     if (isFainted(this.player)) {
+      this.syncActivePartyHp();
+      if (this.hasSwitchablePartyMembers()) {
+        this.forcedSwitch = true;
+        this.waitingForPlayer = true;
+        this.log(`${this.player.name} fainted! Choose a replacement.`);
+        this.buildActionButtons();
+        this.showSwitchMenu();
+        return;
+      }
       this.endBattle(false);
       return;
     }
@@ -191,19 +375,14 @@ export class BattleScene extends Phaser.Scene {
 
   private endBattle(playerWon: boolean): void {
     this.waitingForPlayer = false;
+    this.hideSwitchMenu();
     this.log(
       playerWon
         ? "You won the training spar!"
         : "You lost the training spar...",
     );
 
-    const partyCreature =
-      this.partyInstanceIndex >= 0
-        ? playerParty.creatures[this.partyInstanceIndex]
-        : undefined;
-    if (partyCreature) {
-      partyCreature.currentHp = this.player.currentHp;
-    }
+    this.syncActivePartyHp();
 
     this.time.delayedCall(1200, () => {
       this.scene.stop("BattleScene");
