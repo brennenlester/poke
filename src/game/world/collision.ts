@@ -1,0 +1,36 @@
+import { worldState } from "./worldState";
+import { TileType, type ZoneDefinition } from "./zoneTypes";
+
+export function isTileWalkable(
+  zone: ZoneDefinition,
+  tileX: number,
+  tileY: number,
+): boolean {
+  if (
+    tileX < 0 ||
+    tileY < 0 ||
+    tileX >= zone.width ||
+    tileY >= zone.height
+  ) {
+    return false;
+  }
+
+  const tile = zone.tiles[tileY][tileX];
+  if (tile === TileType.Floor) {
+    return true;
+  }
+  if (tile === TileType.OverworldGate) {
+    return worldState.overworldUnlocked;
+  }
+  return false;
+}
+
+export function canOccupy(
+  zone: ZoneDefinition,
+  gridX: number,
+  gridY: number,
+): boolean {
+  const tileX = Math.round(gridX);
+  const tileY = Math.round(gridY);
+  return isTileWalkable(zone, tileX, tileY);
+}

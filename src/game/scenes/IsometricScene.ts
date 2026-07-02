@@ -5,20 +5,25 @@ import {
   depthForGridCell,
   gridToScreen,
 } from "../isometric";
+import { canOccupy } from "../world/collision";
+import {
+  STARTING_ZONE_ID,
+  getZone,
+} from "../world/zones";
+import { toggleOverworldUnlock, worldState } from "../world/worldState";
+import { TileType, type ZoneDefinition, type ZoneId } from "../world/zoneTypes";
 
 const FLOOR_LAYER = 0;
 const PLAYER_LAYER = 0.5;
-
-const GRID_WIDTH = 12;
-const GRID_HEIGHT = 12;
 const MOVE_SPEED = 6;
-
-const CHESS_LIGHT = 0xf0d9b5;
-const CHESS_DARK = 0xb58863;
+const GATE_LOCKED = 0x8b3a3a;
+const GATE_OPEN = 0x4a9a5a;
+const WALL_TINT = 0x3a3a4a;
 
 export class IsometricScene extends Phaser.Scene {
-  private playerGridX = 6;
-  private playerGridY = 6;
+  private currentZoneId: ZoneId = STARTING_ZONE_ID;
+  private playerGridX = 3;
+  private playerGridY = 7;
   private player!: Phaser.GameObjects.Image;
   private cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
   private wasd!: {
@@ -27,6 +32,7 @@ export class IsometricScene extends Phaser.Scene {
     S: Phaser.Input.Keyboard.Key;
     D: Phaser.Input.Keyboard.Key;
   };
+  private unlockKey!: Phaser.Input.Keyboard.Key;
 
   constructor() {
     super({ key: "IsometricScene" });
@@ -34,18 +40,28 @@ export class IsometricScene extends Phaser.Scene {
 
   create(): void {
     this.createPlaceholderTextures();
-    this.drawTileGrid();
 
-    this.player = this.add.image(0, 0, "player").setOrigin(0.5, 1);
-    this.syncPlayerToGrid();
+    const startZone = getZone(STARTING_ZONE_ID);
+    if (startZone.defaultSpawn) {
+      this.playerGridX = startZone.defaultSpawn.x;
+      this.playerGridY = startZone.defaultSpawn.y;
+    }
+
+    this.loadZone(this.currentZoneId);
 
     this.cursors = this.input.keyboard!.createCursorKeys();
     this.wasd = this.input.keyboard!.addKeys("W,A,S,D") as typeof this.wasd;
+    this.unlockKey = this.input.keyboard!.addKey("U");
 
-    this.scale.on("resize", () => this.repositionGrid());
+    this.scale.on("resize", () => this.repositionZone());
   }
 
   update(_time: number, delta: number): void {
+    if (Phaser.Input.Keyboard.JustDown(this.unlockKey)) {
+      toggleOverworldUnlock();
+      this.loadZone(this.currentZoneId);
+    }
+
     let dx = 0;
     let dy = 0;
 
@@ -70,22 +86,82 @@ export class IsometricScene extends Phaser.Scene {
     dx /= length;
     dy /= length;
 
-    const step = MOVE_SPEED * (delta / 1000);
-    this.playerGridX = Phaser.Math.Clamp(
-      this.playerGridX + dx * step,
-      0,
-      GRID_WIDTH - 1,
-    );
-    this.playerGridY = Phaser.Math.Clamp(
-      this.playerGridY + dy * step,
-      0,
-      GRID_HEIGHT - 1,
-    );
+    const zone = getZone(this.currentZoneId);
+    const step = MOVE_SPEED * (Math.min(delta, 50) / 1000);
+    const nextX = this.playerGridX + dx * step;
+    const nextY = this.playerGridY + dy * step;
 
+    if (canOccupy(zone, nextX, nextY)) {
+      this.playerGridX = nextX;
+      this.playerGridY = nextY;
+      this.syncPlayerToGrid();
+      this.tryZoneTransition(zone);
+    }
+  }
+
+  private tryZoneTransition(zone: ZoneDefinition): void {
+    const tileX = Math.round(this.playerGridX);
+    const tileY = Math.round(this.playerGridY);
+
+    for (const transition of zone.transitions) {
+      if (transition.x === tileX && transition.y === tileY) {
+        if (
+          transition.targetZone === "overworld" &&
+          !worldState.overworldUnlocked
+        ) {
+          return;
+        }
+        this.loadZone(transition.targetZone);
+        this.playerGridX = transition.targetX;
+        this.playerGridY = transition.targetY;
+        this.syncPlayerToGrid();
+        return;
+      }
+    }
+  }
+
+  private loadZone(zoneId: ZoneId): void {
+    this.currentZoneId = zoneId;
+    const zone = getZone(zoneId);
+
+    this.children.removeAll(true);
+    this.createPlaceholderTextures();
+    this.drawZoneTiles(zone);
+
+    this.add
+      .text(16, 16, zone.name, {
+        color: "#f0e6d2",
+        fontFamily: "system-ui, sans-serif",
+        fontSize: "18px",
+      })
+      .setScrollFactor(0)
+      .setDepth(10_000);
+
+    this.add
+      .text(
+        16,
+        42,
+        worldState.overworldUnlocked
+          ? "Overworld gate: OPEN (dev U toggles)"
+          : "Overworld gate: LOCKED (press U to unlock)",
+        {
+          color: "#c8b8a0",
+          fontFamily: "system-ui, sans-serif",
+          fontSize: "14px",
+        },
+      )
+      .setScrollFactor(0)
+      .setDepth(10_000);
+
+    this.player = this.add.image(0, 0, "player").setOrigin(0.5, 1);
     this.syncPlayerToGrid();
   }
 
   private createPlaceholderTextures(): void {
+    if (this.textures.exists("iso-tile")) {
+      return;
+    }
+
     const tileGraphics = this.make.graphics({ x: 0, y: 0 });
     tileGraphics.fillStyle(0xffffff, 1);
     tileGraphics.beginPath();
@@ -109,25 +185,71 @@ export class IsometricScene extends Phaser.Scene {
     playerGraphics.destroy();
   }
 
-  private drawTileGrid(): void {
-    const origin = this.getGridOrigin();
+  private drawZoneTiles(zone: ZoneDefinition): void {
+    const origin = this.getGridOrigin(zone);
 
-    for (let y = 0; y < GRID_HEIGHT; y++) {
-      for (let x = 0; x < GRID_WIDTH; x++) {
+    for (let y = 0; y < zone.height; y++) {
+      for (let x = 0; x < zone.width; x++) {
+        const tileType = zone.tiles[y][x];
+        if (tileType === TileType.Wall) {
+          continue;
+        }
+
         const screen = gridToScreen(x, y, origin.x, origin.y);
         const tile = this.add
           .image(screen.x, screen.y, "iso-tile")
           .setOrigin(0.5, 0.5);
 
-        const isLight = (x + y) % 2 === 0;
-        tile.setTint(isLight ? CHESS_LIGHT : CHESS_DARK);
+        if (tileType === TileType.OverworldGate) {
+          tile.setTint(
+            worldState.overworldUnlocked ? GATE_OPEN : GATE_LOCKED,
+          );
+        } else {
+          const isLight = (x + y) % 2 === 0;
+          tile.setTint(isLight ? zone.lightTint : zone.darkTint);
+        }
+
         tile.setDepth(depthForGridCell(x, y, FLOOR_LAYER));
+      }
+    }
+
+    this.drawWalls(zone, origin);
+  }
+
+  private drawWalls(
+    zone: ZoneDefinition,
+    origin: { x: number; y: number },
+  ): void {
+    for (let y = 0; y < zone.height; y++) {
+      for (let x = 0; x < zone.width; x++) {
+        if (zone.tiles[y][x] !== TileType.Wall) {
+          continue;
+        }
+
+        const hasFloorNeighbor =
+          (x > 0 && zone.tiles[y][x - 1] !== TileType.Wall) ||
+          (x < zone.width - 1 && zone.tiles[y][x + 1] !== TileType.Wall) ||
+          (y > 0 && zone.tiles[y - 1][x] !== TileType.Wall) ||
+          (y < zone.height - 1 && zone.tiles[y + 1][x] !== TileType.Wall);
+
+        if (!hasFloorNeighbor) {
+          continue;
+        }
+
+        const screen = gridToScreen(x, y, origin.x, origin.y);
+        const wall = this.add
+          .image(screen.x, screen.y, "iso-tile")
+          .setOrigin(0.5, 0.5)
+          .setTint(WALL_TINT)
+          .setAlpha(0.9);
+        wall.setDepth(depthForGridCell(x, y, FLOOR_LAYER));
       }
     }
   }
 
   private syncPlayerToGrid(): void {
-    const origin = this.getGridOrigin();
+    const zone = getZone(this.currentZoneId);
+    const origin = this.getGridOrigin(zone);
     const screen = gridToScreen(
       this.playerGridX,
       this.playerGridY,
@@ -141,10 +263,10 @@ export class IsometricScene extends Phaser.Scene {
     );
   }
 
-  private getGridOrigin(): { x: number; y: number } {
+  private getGridOrigin(zone: ZoneDefinition): { x: number; y: number } {
     const center = gridToScreen(
-      (GRID_WIDTH - 1) / 2,
-      (GRID_HEIGHT - 1) / 2,
+      (zone.width - 1) / 2,
+      (zone.height - 1) / 2,
       0,
       0,
     );
@@ -155,15 +277,42 @@ export class IsometricScene extends Phaser.Scene {
     };
   }
 
-  private repositionGrid(): void {
+  private repositionZone(): void {
+    const zone = getZone(this.currentZoneId);
+    const savedX = this.playerGridX;
+    const savedY = this.playerGridY;
+
     this.children.removeAll(true);
-    this.createPlaceholderTextures();
-    this.drawTileGrid();
+    this.drawZoneTiles(zone);
 
-    this.player = this.add
-      .image(0, 0, "player")
-      .setOrigin(0.5, 1);
+    this.add
+      .text(16, 16, zone.name, {
+        color: "#f0e6d2",
+        fontFamily: "system-ui, sans-serif",
+        fontSize: "18px",
+      })
+      .setScrollFactor(0)
+      .setDepth(10_000);
 
+    this.add
+      .text(
+        16,
+        42,
+        worldState.overworldUnlocked
+          ? "Overworld gate: OPEN (dev U toggles)"
+          : "Overworld gate: LOCKED (press U to unlock)",
+        {
+          color: "#c8b8a0",
+          fontFamily: "system-ui, sans-serif",
+          fontSize: "14px",
+        },
+      )
+      .setScrollFactor(0)
+      .setDepth(10_000);
+
+    this.playerGridX = savedX;
+    this.playerGridY = savedY;
+    this.player = this.add.image(0, 0, "player").setOrigin(0.5, 1);
     this.syncPlayerToGrid();
   }
 }
