@@ -2,9 +2,13 @@ import Phaser from "phaser";
 import {
   TILE_HEIGHT,
   TILE_WIDTH,
+  depthForGridCell,
   gridToScreen,
   isWithinGrid,
 } from "../isometric";
+
+const FLOOR_LAYER = 0;
+const PLAYER_LAYER = 0.5;
 
 const GRID_WIDTH = 12;
 const GRID_HEIGHT = 12;
@@ -42,7 +46,9 @@ export class IsometricScene extends Phaser.Scene {
     this.player = this.add
       .image(start.x, start.y - TILE_HEIGHT / 2, "player")
       .setOrigin(0.5, 1)
-      .setDepth(1000);
+      .setDepth(
+        depthForGridCell(this.playerGridX, this.playerGridY, PLAYER_LAYER),
+      );
 
     this.cursors = this.input.keyboard!.createCursorKeys();
     this.wasd = this.input.keyboard!.addKeys("W,A,S,D") as typeof this.wasd;
@@ -119,20 +125,18 @@ export class IsometricScene extends Phaser.Scene {
         const checker = (x + y) % 2 === 0 ? 0xffffff : 0x000000;
         tile.setTint(checker);
         tile.setAlpha(checker === 0xffffff ? 1 : 0.85);
-        tile.setDepth(x + y);
+        tile.setDepth(depthForGridCell(x, y, FLOOR_LAYER));
       }
     }
   }
 
   private movePlayerTo(gridX: number, gridY: number): void {
     this.isMoving = true;
-    this.playerGridX = gridX;
-    this.playerGridY = gridY;
 
+    const fromX = this.playerGridX;
+    const fromY = this.playerGridY;
     const origin = this.getGridOrigin();
     const target = gridToScreen(gridX, gridY, origin.x, origin.y);
-
-    this.player.setDepth(gridX + gridY + 1000);
 
     this.tweens.add({
       targets: this.player,
@@ -140,7 +144,18 @@ export class IsometricScene extends Phaser.Scene {
       y: target.y - TILE_HEIGHT / 2,
       duration: MOVE_DURATION_MS,
       ease: "Linear",
+      onUpdate: (tween) => {
+        const progress = tween.progress;
+        const gx = fromX + (gridX - fromX) * progress;
+        const gy = fromY + (gridY - fromY) * progress;
+        this.player.setDepth(depthForGridCell(gx, gy, PLAYER_LAYER));
+      },
       onComplete: () => {
+        this.playerGridX = gridX;
+        this.playerGridY = gridY;
+        this.player.setDepth(
+          depthForGridCell(gridX, gridY, PLAYER_LAYER),
+        );
         this.isMoving = false;
       },
     });
@@ -178,6 +193,8 @@ export class IsometricScene extends Phaser.Scene {
     this.player = this.add
       .image(screen.x, screen.y - TILE_HEIGHT / 2, "player")
       .setOrigin(0.5, 1)
-      .setDepth(this.playerGridX + this.playerGridY + 1000);
+      .setDepth(
+        depthForGridCell(this.playerGridX, this.playerGridY, PLAYER_LAYER),
+      );
   }
 }
