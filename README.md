@@ -20,12 +20,19 @@ npm run build
 npm run preview
 ```
 
-Open the dev server in a browser. You should see an isometric tile grid with a placeholder player. Move with **arrow keys** or **WASD**.
+Open the dev server in a browser. You should see an isometric tile grid with a placeholder player. Move with **arrow keys** or **WASD** (hold for continuous movement).
+
+### World zones (dev)
+
+The confined starting region has three zones — **Whisper Grove** → **Moon Shrine** → **Hearth Crossing** — connected by map exits. The **Folklore Overworld** north of Hearth Crossing is locked until the story gate opens.
+
+- **U** — dev cheat: toggle overworld gate unlock (until BRE-12 quests wire the real flag)
 
 ## Project structure
 
 - `src/game/` — Phaser 3 game bootstrap and scenes
 - `src/game/isometric.ts` — isometric grid ↔ screen coordinate helpers
+- `src/game/world/` — zone maps, collision, `worldState.overworldUnlocked`
 - `AGENTS.md` — agent workflow conventions
 
 ## License
