@@ -4,13 +4,10 @@ import {
   TILE_WIDTH,
   depthForGridCell,
   gridToScreen,
-  zoneGridCenter,
-  type ZoneCenter,
 } from "../isometric";
 import {
   ensureWorldTextures,
   getFloorTextureKey,
-  WALL_RISE,
 } from "../render/worldTextures";
 import { getPartySummary } from "../creatures/party";
 import { getInventorySummary } from "../inventory/playerInventory";
@@ -28,7 +25,8 @@ import {
 } from "../world/zoneProps";
 
 const FLOOR_LAYER = 0;
-const PLAYER_LAYER = 0.5;
+/** Above all tiles, walls, and props (max ~15×15 grid); below HUD (10_000 + scrollFactor 0). */
+const PLAYER_DEPTH = 20_000;
 const MOVE_SPEED = 6;
 const ENCOUNTER_TRAVEL_THRESHOLD = 0.75;
 const ENCOUNTER_CHANCE = 0.10;
@@ -55,7 +53,6 @@ export class IsometricScene extends Phaser.Scene {
   private inShrine = false;
   private shrinePrompt?: Phaser.GameObjects.Text;
   private worldOrigin = { x: 0, y: 0 };
-  private zoneCenter: ZoneCenter = { x: 0, y: 0 };
 
   constructor() {
     super({ key: "IsometricScene" });
@@ -213,7 +210,6 @@ export class IsometricScene extends Phaser.Scene {
 
     ensureWorldTextures(this, zoneId);
     this.worldOrigin = this.getZoneWorldOrigin(zone);
-    this.zoneCenter = zoneGridCenter(zone.width, zone.height);
 
     this.drawZoneTiles(zone);
     this.drawProps(zone);
@@ -228,10 +224,10 @@ export class IsometricScene extends Phaser.Scene {
     this.updateShrinePrompt();
   }
 
-  private getZoneWorldOrigin(zone: ZoneDefinition): { x: number; y: number } {
+  private getZoneWorldOrigin(_zone: ZoneDefinition): { x: number; y: number } {
     return {
-      x: zone.height * (TILE_WIDTH / 2),
-      y: WALL_RISE + TILE_HEIGHT * 2,
+      x: 80,
+      y: 80,
     };
   }
 
@@ -241,25 +237,14 @@ export class IsometricScene extends Phaser.Scene {
       gridY,
       this.worldOrigin.x,
       this.worldOrigin.y,
-      this.zoneCenter,
     );
   }
 
   private configureCamera(zone: ZoneDefinition): void {
-    const corners = [
-      this.toScreen(0, 0),
-      this.toScreen(zone.width - 1, 0),
-      this.toScreen(0, zone.height - 1),
-      this.toScreen(zone.width - 1, zone.height - 1),
-    ];
-
-    const xs = corners.map((c) => c.x);
-    const ys = corners.map((c) => c.y);
-    const padding = 140;
-    const minX = Math.min(...xs) - padding;
-    const minY = Math.min(...ys) - WALL_RISE - padding;
-    const maxX = Math.max(...xs) + TILE_WIDTH + padding;
-    const maxY = Math.max(...ys) + TILE_HEIGHT + WALL_RISE + padding;
+    const minX = this.worldOrigin.x - 80;
+    const minY = this.worldOrigin.y - 80;
+    const maxX = this.worldOrigin.x + zone.width * TILE_WIDTH + 80;
+    const maxY = this.worldOrigin.y + zone.height * TILE_HEIGHT + 80;
     const worldW = maxX - minX;
     const worldH = maxY - minY;
 
@@ -332,15 +317,10 @@ export class IsometricScene extends Phaser.Scene {
         const screen = this.toScreen(x, y);
         const depth = depthForGridCell(x, y, FLOOR_LAYER);
 
-        const top = this.add
-          .image(screen.x, screen.y - WALL_RISE / 2, "hedge-top")
+        const block = this.add
+          .image(screen.x, screen.y, "hedge-block")
           .setOrigin(0.5, 0.5);
-        top.setDepth(depth);
-
-        const face = this.add
-          .image(screen.x - TILE_WIDTH / 4, screen.y, "wall-face")
-          .setOrigin(0.5, 1);
-        face.setDepth(depth - 0.05);
+        block.setDepth(depth);
       }
     }
   }
@@ -355,7 +335,7 @@ export class IsometricScene extends Phaser.Scene {
         prop.kind === "gate" ? gateOpen : true,
       );
       const propSprite = this.add
-        .image(screen.x, screen.y - TILE_HEIGHT / 2 + 4, key)
+        .image(screen.x, screen.y + TILE_HEIGHT / 2 - 2, key)
         .setOrigin(0.5, 1);
       propSprite.setDepth(depthForGridCell(prop.x, prop.y, 0.45));
     }
@@ -409,10 +389,11 @@ export class IsometricScene extends Phaser.Scene {
   private syncPlayerToGrid(): void {
     const screen = this.toScreen(this.playerGridX, this.playerGridY);
 
-    this.player.setPosition(screen.x, screen.y - TILE_HEIGHT / 2 + 2);
-    this.player.setDepth(
-      depthForGridCell(this.playerGridX, this.playerGridY, PLAYER_LAYER),
+    this.player.setPosition(
+      screen.x,
+      screen.y + TILE_HEIGHT / 2 - 2,
     );
+    this.player.setDepth(PLAYER_DEPTH);
   }
 
   private renderHud(zone: ZoneDefinition): void {

@@ -1,42 +1,19 @@
-export const TILE_WIDTH = 64;
-export const TILE_HEIGHT = 32;
+export const TILE_WIDTH = 48;
+export const TILE_HEIGHT = 48;
 
 export type GridPoint = { x: number; y: number };
 export type ScreenPoint = { x: number; y: number };
 
-export type ZoneCenter = { x: number; y: number };
-
-/**
- * Project square grid to screen with dimetric layout, then rotate 45° CCW
- * around the zone center so a flat edge of the board faces the camera.
- */
+/** Top-down orthogonal grid: each cell is an axis-aligned square. */
 export function gridToScreen(
   gridX: number,
   gridY: number,
   originX: number,
   originY: number,
-  zoneCenter?: ZoneCenter,
 ): ScreenPoint {
-  const halfW = TILE_WIDTH / 2;
-  const halfH = TILE_HEIGHT / 2;
-  const isoX = (gridX - gridY) * halfW;
-  const isoY = (gridX + gridY) * halfH;
-
-  if (!zoneCenter) {
-    return { x: originX + isoX, y: originY + isoY };
-  }
-
-  const centerIsoX = (zoneCenter.x - zoneCenter.y) * halfW;
-  const centerIsoY = (zoneCenter.x + zoneCenter.y) * halfH;
-  const dx = isoX - centerIsoX;
-  const dy = isoY - centerIsoY;
-  const c = Math.SQRT1_2;
-  const rotX = (dx - dy) * c;
-  const rotY = (dx + dy) * c;
-
   return {
-    x: originX + centerIsoX + rotX,
-    y: originY + centerIsoY + rotY,
+    x: originX + gridX * TILE_WIDTH + TILE_WIDTH / 2,
+    y: originY + gridY * TILE_HEIGHT + TILE_HEIGHT / 2,
   };
 }
 
@@ -45,34 +22,11 @@ export function screenToGrid(
   screenY: number,
   originX: number,
   originY: number,
-  zoneCenter?: ZoneCenter,
 ): GridPoint {
-  const halfW = TILE_WIDTH / 2;
-  const halfH = TILE_HEIGHT / 2;
-
-  let dx = screenX - originX;
-  let dy = screenY - originY;
-
-  if (zoneCenter) {
-    const centerIsoX = (zoneCenter.x - zoneCenter.y) * halfW;
-    const centerIsoY = (zoneCenter.x + zoneCenter.y) * halfH;
-    dx -= centerIsoX;
-    dy -= centerIsoY;
-    const c = Math.SQRT1_2;
-    const unrotX = (dx + dy) * c;
-    const unrotY = (-dx + dy) * c;
-    dx = centerIsoX + unrotX;
-    dy = centerIsoY + unrotY;
-  }
-
   return {
-    x: (dx / halfW + dy / halfH) / 2,
-    y: (dy / halfH - dx / halfW) / 2,
+    x: (screenX - originX) / TILE_WIDTH - 0.5,
+    y: (screenY - originY) / TILE_HEIGHT - 0.5,
   };
-}
-
-export function zoneGridCenter(width: number, height: number): ZoneCenter {
-  return { x: (width - 1) / 2, y: (height - 1) / 2 };
 }
 
 export function isWithinGrid(
@@ -84,11 +38,11 @@ export function isWithinGrid(
   return gridX >= 0 && gridY >= 0 && gridX < width && gridY < height;
 }
 
-/** Render depth for a grid cell; higher values draw in front (closer to camera). */
+/** Higher Y draws in front (south = toward camera in top-down view). */
 export function depthForGridCell(
   gridX: number,
   gridY: number,
   layer = 0,
 ): number {
-  return gridX + gridY + layer;
+  return gridY * 1000 + gridX + layer;
 }
