@@ -22,6 +22,8 @@ npm run preview
 
 Open the dev server in a browser. You should see an isometric tile grid with a placeholder player. Move with **arrow keys** or **WASD** (hold for continuous movement).
 
+At **Moon Shrine**, stand on the glowing altar tile and press **E** to open the shrine UI (craft materials into relics, fuse relics with party creatures).
+
 ### World zones (dev)
 
 The confined starting region has three zones — **Whisper Grove** → **Moon Shrine** → **Hearth Crossing** — connected by map exits. The **Folklore Overworld** north of Hearth Crossing is locked until the story gate opens.
@@ -34,8 +36,13 @@ The confined starting region has three zones — **Whisper Grove** → **Moon Sh
 - `src/game/isometric.ts` — isometric grid ↔ screen coordinate helpers
 - `src/game/world/` — zone maps, collision, `worldState.overworldUnlocked`
 - `src/game/creatures/` — folklore creature catalog and party collection
+- `src/game/inventory/` — spar-win materials and crafted items
+- `src/game/crafting/` — shrine craft recipes
+- `src/game/shrine/` — fusion effect matrix and Moon Shrine logic
+- `src/game/progression/` — creature XP and leveling from spar wins
 - `src/game/encounters/` — zone encounter tables
 - Walk in zones to trigger random encounters; choose **Befriend**, **Spar**, or **Flee**
+- Win spars to earn creature-specific materials, Folklore Dust, and XP
 - `AGENTS.md` — agent workflow conventions
 
 ## License

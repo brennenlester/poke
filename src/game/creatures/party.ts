@@ -1,4 +1,5 @@
 import { getCreatureDefinition } from "./catalog";
+import { createNewCreatureProgress } from "../progression/leveling";
 import type { CreatureInstance } from "./types";
 
 export const playerParty = {
@@ -13,6 +14,7 @@ export function addToParty(definitionId: string): CreatureInstance {
     instanceId: `c-${nextInstanceId++}`,
     definitionId,
     currentHp: def.maxHp,
+    ...createNewCreatureProgress(),
   };
   playerParty.creatures.push(instance);
   return instance;
@@ -22,13 +24,35 @@ export function hasCreature(definitionId: string): boolean {
   return playerParty.creatures.some((c) => c.definitionId === definitionId);
 }
 
+export function getEffectiveMaxHp(creature: CreatureInstance): number {
+  const def = getCreatureDefinition(creature.definitionId);
+  return def.maxHp + (creature.hpBonus ?? 0);
+}
+
+export function getEffectiveAttack(creature: CreatureInstance): number {
+  const def = getCreatureDefinition(creature.definitionId);
+  return def.attack + (creature.attackBonus ?? 0);
+}
+
 export function getPartySummary(): string {
   if (playerParty.creatures.length === 0) {
     return "Party: (empty)";
   }
   const names = playerParty.creatures.map((c) => {
     const def = getCreatureDefinition(c.definitionId);
-    return def.name;
+    const buffs: string[] = [];
+    if (c.secondaryMove) {
+      buffs.push("+ember");
+    }
+    if (c.hpBonus) {
+      buffs.push(`+${c.hpBonus}hp`);
+    }
+    const buffLabel = buffs.length > 0 ? ` [${buffs.join(",")}]` : "";
+    return `${def.name} Lv.${c.level}${buffLabel}`;
   });
   return `Party: ${names.join(", ")}`;
+}
+
+export function getCreatureInstance(instanceId: string): CreatureInstance | undefined {
+  return playerParty.creatures.find((c) => c.instanceId === instanceId);
 }

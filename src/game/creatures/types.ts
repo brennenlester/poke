@@ -23,6 +23,18 @@ export type CreatureInstance = {
   definitionId: string;
   currentHp: number;
   nickname?: string;
+  level: number;
+  xp: number;
+  /** Bonus max HP from shrine health buffs. */
+  hpBonus?: number;
+  /** Bonus attack from shrine attack buffs. */
+  attackBonus?: number;
+  /** Secondary elemental type from shrine attack buff. */
+  secondaryElement?: string;
+  /** Extra move granted by shrine attack buff. */
+  secondaryMove?: MoveDefinition;
+  /** Applied shrine effect keys (creatureId:itemId). */
+  appliedEffects?: string[];
 };
 
 export type BattleCombatant = {

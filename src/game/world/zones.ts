@@ -45,6 +45,7 @@ const SHRINE: ZoneDefinition = {
   ]),
   lightTint: 0xe0d4f0,
   darkTint: 0x8a7aa8,
+  shrineInteract: { x: 5, y: 5 },
   transitions: [
     { x: 0, y: 5, targetZone: "grove", targetX: 8, targetY: 5 },
     { x: 9, y: 5, targetZone: "village", targetX: 1, targetY: 5 },

@@ -6,6 +6,7 @@ import {
   gridToScreen,
 } from "../isometric";
 import { getPartySummary } from "../creatures/party";
+import { getInventorySummary } from "../inventory/playerInventory";
 import { rollWildCreature } from "../encounters/tables";
 import { canOccupy } from "../world/collision";
 import {
@@ -23,6 +24,7 @@ const ENCOUNTER_CHANCE = 0.10;
 const GATE_LOCKED = 0x8b3a3a;
 const GATE_OPEN = 0x4a9a5a;
 const WALL_TINT = 0x3a3a4a;
+const SHRINE_GLOW = 0xc8b8e8;
 
 export class IsometricScene extends Phaser.Scene {
   private currentZoneId: ZoneId = STARTING_ZONE_ID;
@@ -37,8 +39,11 @@ export class IsometricScene extends Phaser.Scene {
     D: Phaser.Input.Keyboard.Key;
   };
   private unlockKey!: Phaser.Input.Keyboard.Key;
+  private interactKey!: Phaser.Input.Keyboard.Key;
   private travelSinceEncounter = 0;
   private inEncounter = false;
+  private inShrine = false;
+  private shrinePrompt?: Phaser.GameObjects.Text;
 
   constructor() {
     super({ key: "IsometricScene" });
@@ -58,9 +63,11 @@ export class IsometricScene extends Phaser.Scene {
     this.cursors = this.input.keyboard!.createCursorKeys();
     this.wasd = this.input.keyboard!.addKeys("W,A,S,D") as typeof this.wasd;
     this.unlockKey = this.input.keyboard!.addKey("U");
+    this.interactKey = this.input.keyboard!.addKey("E");
 
     this.events.on("resume", () => {
       this.inEncounter = false;
+      this.inShrine = false;
       this.travelSinceEncounter = 0;
       const zoneId = this.currentZoneId;
       const x = this.playerGridX;
@@ -75,13 +82,19 @@ export class IsometricScene extends Phaser.Scene {
   }
 
   update(_time: number, delta: number): void {
-    if (this.inEncounter) {
+    if (this.inEncounter || this.inShrine) {
       return;
     }
     if (Phaser.Input.Keyboard.JustDown(this.unlockKey)) {
       toggleOverworldUnlock();
       this.loadZone(this.currentZoneId);
     }
+
+    if (Phaser.Input.Keyboard.JustDown(this.interactKey)) {
+      this.tryShrineInteract();
+    }
+
+    this.updateShrinePrompt();
 
     let dx = 0;
     let dy = 0;
@@ -233,6 +246,69 @@ export class IsometricScene extends Phaser.Scene {
     }
 
     this.drawWalls(zone, origin);
+    this.drawShrineMarker(zone, origin);
+  }
+
+  private drawShrineMarker(
+    zone: ZoneDefinition,
+    origin: { x: number; y: number },
+  ): void {
+    if (!zone.shrineInteract) {
+      return;
+    }
+    const { x, y } = zone.shrineInteract;
+    const screen = gridToScreen(x, y, origin.x, origin.y);
+    const marker = this.add
+      .image(screen.x, screen.y, "iso-tile")
+      .setOrigin(0.5, 0.5)
+      .setTint(SHRINE_GLOW)
+      .setAlpha(0.55);
+    marker.setDepth(depthForGridCell(x, y, FLOOR_LAYER + 0.1));
+  }
+
+  private isOnShrineTile(): boolean {
+    const zone = getZone(this.currentZoneId);
+    if (!zone.shrineInteract) {
+      return false;
+    }
+    const tileX = Math.round(this.playerGridX);
+    const tileY = Math.round(this.playerGridY);
+    return (
+      tileX === zone.shrineInteract.x && tileY === zone.shrineInteract.y
+    );
+  }
+
+  private updateShrinePrompt(): void {
+    const show = this.isOnShrineTile();
+    if (show && !this.shrinePrompt) {
+      this.shrinePrompt = this.add
+        .text(this.scale.width / 2, this.scale.height - 48, "Press E — Moon Shrine", {
+          color: "#e8dff8",
+          backgroundColor: "#2a2440cc",
+          fontFamily: "system-ui, sans-serif",
+          fontSize: "15px",
+          padding: { x: 12, y: 6 },
+        })
+        .setOrigin(0.5)
+        .setScrollFactor(0)
+        .setDepth(10_001);
+    } else if (!show && this.shrinePrompt) {
+      this.shrinePrompt.destroy();
+      this.shrinePrompt = undefined;
+    }
+  }
+
+  private tryShrineInteract(): void {
+    if (!this.isOnShrineTile()) {
+      return;
+    }
+    this.inShrine = true;
+    if (this.shrinePrompt) {
+      this.shrinePrompt.destroy();
+      this.shrinePrompt = undefined;
+    }
+    this.scene.pause();
+    this.scene.launch("ShrineScene");
   }
 
   private drawWalls(
@@ -342,6 +418,15 @@ export class IsometricScene extends Phaser.Scene {
         color: "#d8e8c0",
         fontFamily: "system-ui, sans-serif",
         fontSize: "14px",
+      })
+      .setScrollFactor(0)
+      .setDepth(10_000);
+
+    this.add
+      .text(16, 86, getInventorySummary(), {
+        color: "#c8b8e8",
+        fontFamily: "system-ui, sans-serif",
+        fontSize: "13px",
       })
       .setScrollFactor(0)
       .setDepth(10_000);
