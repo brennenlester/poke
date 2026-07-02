@@ -4,6 +4,8 @@ import {
   TILE_WIDTH,
   depthForGridCell,
   gridToScreen,
+  zoneGridCenter,
+  type ZoneCenter,
 } from "../isometric";
 import {
   ensureWorldTextures,
@@ -53,6 +55,7 @@ export class IsometricScene extends Phaser.Scene {
   private inShrine = false;
   private shrinePrompt?: Phaser.GameObjects.Text;
   private worldOrigin = { x: 0, y: 0 };
+  private zoneCenter: ZoneCenter = { x: 0, y: 0 };
 
   constructor() {
     super({ key: "IsometricScene" });
@@ -210,6 +213,7 @@ export class IsometricScene extends Phaser.Scene {
 
     ensureWorldTextures(this, zoneId);
     this.worldOrigin = this.getZoneWorldOrigin(zone);
+    this.zoneCenter = zoneGridCenter(zone.width, zone.height);
 
     this.drawZoneTiles(zone);
     this.drawProps(zone);
@@ -231,18 +235,22 @@ export class IsometricScene extends Phaser.Scene {
     };
   }
 
+  private toScreen(gridX: number, gridY: number): { x: number; y: number } {
+    return gridToScreen(
+      gridX,
+      gridY,
+      this.worldOrigin.x,
+      this.worldOrigin.y,
+      this.zoneCenter,
+    );
+  }
+
   private configureCamera(zone: ZoneDefinition): void {
-    const origin = this.worldOrigin;
     const corners = [
-      gridToScreen(0, 0, origin.x, origin.y),
-      gridToScreen(zone.width - 1, 0, origin.x, origin.y),
-      gridToScreen(0, zone.height - 1, origin.x, origin.y),
-      gridToScreen(
-        zone.width - 1,
-        zone.height - 1,
-        origin.x,
-        origin.y,
-      ),
+      this.toScreen(0, 0),
+      this.toScreen(zone.width - 1, 0),
+      this.toScreen(0, zone.height - 1),
+      this.toScreen(zone.width - 1, zone.height - 1),
     ];
 
     const xs = corners.map((c) => c.x);
@@ -269,7 +277,6 @@ export class IsometricScene extends Phaser.Scene {
   }
 
   private drawZoneTiles(zone: ZoneDefinition): void {
-    const origin = this.worldOrigin;
     const transitionSet = new Set(
       zone.transitions.map((t) => `${t.x},${t.y}`),
     );
@@ -281,7 +288,7 @@ export class IsometricScene extends Phaser.Scene {
           continue;
         }
 
-        const screen = gridToScreen(x, y, origin.x, origin.y);
+        const screen = this.toScreen(x, y);
         const isPath = transitionSet.has(`${x},${y}`);
         const textureKey = isPath
           ? "floor-path"
@@ -302,13 +309,10 @@ export class IsometricScene extends Phaser.Scene {
       }
     }
 
-    this.drawWalls(zone, origin);
+    this.drawWalls(zone);
   }
 
-  private drawWalls(
-    zone: ZoneDefinition,
-    origin: { x: number; y: number },
-  ): void {
+  private drawWalls(zone: ZoneDefinition): void {
     for (let y = 0; y < zone.height; y++) {
       for (let x = 0; x < zone.width; x++) {
         if (zone.tiles[y][x] !== TileType.Wall) {
@@ -325,7 +329,7 @@ export class IsometricScene extends Phaser.Scene {
           continue;
         }
 
-        const screen = gridToScreen(x, y, origin.x, origin.y);
+        const screen = this.toScreen(x, y);
         const depth = depthForGridCell(x, y, FLOOR_LAYER);
 
         const top = this.add
@@ -342,11 +346,10 @@ export class IsometricScene extends Phaser.Scene {
   }
 
   private drawProps(zone: ZoneDefinition): void {
-    const origin = this.worldOrigin;
     const gateOpen = worldState.overworldUnlocked;
 
     for (const prop of getZoneProps(zone.id)) {
-      const screen = gridToScreen(prop.x, prop.y, origin.x, origin.y);
+      const screen = this.toScreen(prop.x, prop.y);
       const key = propTextureKey(
         prop.kind,
         prop.kind === "gate" ? gateOpen : true,
@@ -404,12 +407,7 @@ export class IsometricScene extends Phaser.Scene {
   }
 
   private syncPlayerToGrid(): void {
-    const screen = gridToScreen(
-      this.playerGridX,
-      this.playerGridY,
-      this.worldOrigin.x,
-      this.worldOrigin.y,
-    );
+    const screen = this.toScreen(this.playerGridX, this.playerGridY);
 
     this.player.setPosition(screen.x, screen.y - TILE_HEIGHT / 2 + 2);
     this.player.setDepth(
