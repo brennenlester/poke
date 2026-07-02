@@ -4,7 +4,6 @@ import {
   TILE_WIDTH,
   depthForGridCell,
   gridToScreen,
-  isWithinGrid,
 } from "../isometric";
 
 const FLOOR_LAYER = 0;
@@ -12,13 +11,15 @@ const PLAYER_LAYER = 0.5;
 
 const GRID_WIDTH = 12;
 const GRID_HEIGHT = 12;
-const MOVE_DURATION_MS = 120;
+const MOVE_SPEED = 6;
+
+const CHESS_LIGHT = 0xf0d9b5;
+const CHESS_DARK = 0xb58863;
 
 export class IsometricScene extends Phaser.Scene {
   private playerGridX = 6;
   private playerGridY = 6;
   private player!: Phaser.GameObjects.Image;
-  private isMoving = false;
   private cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
   private wasd!: {
     W: Phaser.Input.Keyboard.Key;
@@ -35,20 +36,8 @@ export class IsometricScene extends Phaser.Scene {
     this.createPlaceholderTextures();
     this.drawTileGrid();
 
-    const origin = this.getGridOrigin();
-    const start = gridToScreen(
-      this.playerGridX,
-      this.playerGridY,
-      origin.x,
-      origin.y,
-    );
-
-    this.player = this.add
-      .image(start.x, start.y - TILE_HEIGHT / 2, "player")
-      .setOrigin(0.5, 1)
-      .setDepth(
-        depthForGridCell(this.playerGridX, this.playerGridY, PLAYER_LAYER),
-      );
+    this.player = this.add.image(0, 0, "player").setOrigin(0.5, 1);
+    this.syncPlayerToGrid();
 
     this.cursors = this.input.keyboard!.createCursorKeys();
     this.wasd = this.input.keyboard!.addKeys("W,A,S,D") as typeof this.wasd;
@@ -56,41 +45,49 @@ export class IsometricScene extends Phaser.Scene {
     this.scale.on("resize", () => this.repositionGrid());
   }
 
-  update(): void {
-    if (this.isMoving) {
-      return;
-    }
-
+  update(_time: number, delta: number): void {
     let dx = 0;
     let dy = 0;
 
     if (this.cursors.left.isDown || this.wasd.A.isDown) {
-      dx = -1;
-    } else if (this.cursors.right.isDown || this.wasd.D.isDown) {
-      dx = 1;
-    } else if (this.cursors.up.isDown || this.wasd.W.isDown) {
-      dy = -1;
-    } else if (this.cursors.down.isDown || this.wasd.S.isDown) {
-      dy = 1;
+      dx -= 1;
+    }
+    if (this.cursors.right.isDown || this.wasd.D.isDown) {
+      dx += 1;
+    }
+    if (this.cursors.up.isDown || this.wasd.W.isDown) {
+      dy -= 1;
+    }
+    if (this.cursors.down.isDown || this.wasd.S.isDown) {
+      dy += 1;
     }
 
     if (dx === 0 && dy === 0) {
       return;
     }
 
-    const nextX = this.playerGridX + dx;
-    const nextY = this.playerGridY + dy;
+    const length = Math.hypot(dx, dy);
+    dx /= length;
+    dy /= length;
 
-    if (!isWithinGrid(nextX, nextY, GRID_WIDTH, GRID_HEIGHT)) {
-      return;
-    }
+    const step = MOVE_SPEED * (delta / 1000);
+    this.playerGridX = Phaser.Math.Clamp(
+      this.playerGridX + dx * step,
+      0,
+      GRID_WIDTH - 1,
+    );
+    this.playerGridY = Phaser.Math.Clamp(
+      this.playerGridY + dy * step,
+      0,
+      GRID_HEIGHT - 1,
+    );
 
-    this.movePlayerTo(nextX, nextY);
+    this.syncPlayerToGrid();
   }
 
   private createPlaceholderTextures(): void {
     const tileGraphics = this.make.graphics({ x: 0, y: 0 });
-    tileGraphics.fillStyle(0x3d6b4f, 1);
+    tileGraphics.fillStyle(0xffffff, 1);
     tileGraphics.beginPath();
     tileGraphics.moveTo(TILE_WIDTH / 2, 0);
     tileGraphics.lineTo(TILE_WIDTH, TILE_HEIGHT / 2);
@@ -98,7 +95,7 @@ export class IsometricScene extends Phaser.Scene {
     tileGraphics.lineTo(0, TILE_HEIGHT / 2);
     tileGraphics.closePath();
     tileGraphics.fillPath();
-    tileGraphics.lineStyle(2, 0x2a4a38, 1);
+    tileGraphics.lineStyle(1, 0x8b6914, 0.35);
     tileGraphics.strokePath();
     tileGraphics.generateTexture("iso-tile", TILE_WIDTH, TILE_HEIGHT);
     tileGraphics.destroy();
@@ -122,43 +119,26 @@ export class IsometricScene extends Phaser.Scene {
           .image(screen.x, screen.y, "iso-tile")
           .setOrigin(0.5, 0.5);
 
-        const checker = (x + y) % 2 === 0 ? 0xffffff : 0x000000;
-        tile.setTint(checker);
-        tile.setAlpha(checker === 0xffffff ? 1 : 0.85);
+        const isLight = (x + y) % 2 === 0;
+        tile.setTint(isLight ? CHESS_LIGHT : CHESS_DARK);
         tile.setDepth(depthForGridCell(x, y, FLOOR_LAYER));
       }
     }
   }
 
-  private movePlayerTo(gridX: number, gridY: number): void {
-    this.isMoving = true;
-
-    const fromX = this.playerGridX;
-    const fromY = this.playerGridY;
+  private syncPlayerToGrid(): void {
     const origin = this.getGridOrigin();
-    const target = gridToScreen(gridX, gridY, origin.x, origin.y);
+    const screen = gridToScreen(
+      this.playerGridX,
+      this.playerGridY,
+      origin.x,
+      origin.y,
+    );
 
-    this.tweens.add({
-      targets: this.player,
-      x: target.x,
-      y: target.y - TILE_HEIGHT / 2,
-      duration: MOVE_DURATION_MS,
-      ease: "Linear",
-      onUpdate: (tween) => {
-        const progress = tween.progress;
-        const gx = fromX + (gridX - fromX) * progress;
-        const gy = fromY + (gridY - fromY) * progress;
-        this.player.setDepth(depthForGridCell(gx, gy, PLAYER_LAYER));
-      },
-      onComplete: () => {
-        this.playerGridX = gridX;
-        this.playerGridY = gridY;
-        this.player.setDepth(
-          depthForGridCell(gridX, gridY, PLAYER_LAYER),
-        );
-        this.isMoving = false;
-      },
-    });
+    this.player.setPosition(screen.x, screen.y - TILE_HEIGHT / 2);
+    this.player.setDepth(
+      depthForGridCell(this.playerGridX, this.playerGridY, PLAYER_LAYER),
+    );
   }
 
   private getGridOrigin(): { x: number; y: number } {
@@ -176,25 +156,14 @@ export class IsometricScene extends Phaser.Scene {
   }
 
   private repositionGrid(): void {
-    this.tweens.killTweensOf(this.player);
-    this.isMoving = false;
     this.children.removeAll(true);
     this.createPlaceholderTextures();
     this.drawTileGrid();
 
-    const origin = this.getGridOrigin();
-    const screen = gridToScreen(
-      this.playerGridX,
-      this.playerGridY,
-      origin.x,
-      origin.y,
-    );
-
     this.player = this.add
-      .image(screen.x, screen.y - TILE_HEIGHT / 2, "player")
-      .setOrigin(0.5, 1)
-      .setDepth(
-        depthForGridCell(this.playerGridX, this.playerGridY, PLAYER_LAYER),
-      );
+      .image(0, 0, "player")
+      .setOrigin(0.5, 1);
+
+    this.syncPlayerToGrid();
   }
 }
