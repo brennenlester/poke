@@ -5,6 +5,8 @@ import {
   depthForGridCell,
   gridToScreen,
 } from "../isometric";
+import { getPartySummary } from "../creatures/party";
+import { rollWildCreature } from "../encounters/tables";
 import { canOccupy } from "../world/collision";
 import {
   STARTING_ZONE_ID,
@@ -16,6 +18,8 @@ import { TileType, type ZoneDefinition, type ZoneId } from "../world/zoneTypes";
 const FLOOR_LAYER = 0;
 const PLAYER_LAYER = 0.5;
 const MOVE_SPEED = 6;
+const ENCOUNTER_TRAVEL_THRESHOLD = 0.45;
+const ENCOUNTER_CHANCE = 0.38;
 const GATE_LOCKED = 0x8b3a3a;
 const GATE_OPEN = 0x4a9a5a;
 const WALL_TINT = 0x3a3a4a;
@@ -33,6 +37,8 @@ export class IsometricScene extends Phaser.Scene {
     D: Phaser.Input.Keyboard.Key;
   };
   private unlockKey!: Phaser.Input.Keyboard.Key;
+  private travelSinceEncounter = 0;
+  private inEncounter = false;
 
   constructor() {
     super({ key: "IsometricScene" });
@@ -53,10 +59,25 @@ export class IsometricScene extends Phaser.Scene {
     this.wasd = this.input.keyboard!.addKeys("W,A,S,D") as typeof this.wasd;
     this.unlockKey = this.input.keyboard!.addKey("U");
 
+    this.events.on("resume", () => {
+      this.inEncounter = false;
+      this.travelSinceEncounter = 0;
+      const zoneId = this.currentZoneId;
+      const x = this.playerGridX;
+      const y = this.playerGridY;
+      this.loadZone(zoneId);
+      this.playerGridX = x;
+      this.playerGridY = y;
+      this.syncPlayerToGrid();
+    });
+
     this.scale.on("resize", () => this.repositionZone());
   }
 
   update(_time: number, delta: number): void {
+    if (this.inEncounter) {
+      return;
+    }
     if (Phaser.Input.Keyboard.JustDown(this.unlockKey)) {
       toggleOverworldUnlock();
       this.loadZone(this.currentZoneId);
@@ -96,7 +117,29 @@ export class IsometricScene extends Phaser.Scene {
       this.playerGridY = nextY;
       this.syncPlayerToGrid();
       this.tryZoneTransition(zone);
+      this.tryRandomEncounter(step);
     }
+  }
+
+  private tryRandomEncounter(step: number): void {
+    this.travelSinceEncounter += step;
+    if (this.travelSinceEncounter < ENCOUNTER_TRAVEL_THRESHOLD) {
+      return;
+    }
+
+    this.travelSinceEncounter = 0;
+    if (Math.random() >= ENCOUNTER_CHANCE) {
+      return;
+    }
+
+    const creatureId = rollWildCreature(this.currentZoneId);
+    if (!creatureId) {
+      return;
+    }
+
+    this.inEncounter = true;
+    this.scene.pause();
+    this.scene.launch("EncounterScene", { creatureId });
   }
 
   private tryZoneTransition(zone: ZoneDefinition): void {
@@ -127,31 +170,7 @@ export class IsometricScene extends Phaser.Scene {
     this.children.removeAll(true);
     this.createPlaceholderTextures();
     this.drawZoneTiles(zone);
-
-    this.add
-      .text(16, 16, zone.name, {
-        color: "#f0e6d2",
-        fontFamily: "system-ui, sans-serif",
-        fontSize: "18px",
-      })
-      .setScrollFactor(0)
-      .setDepth(10_000);
-
-    this.add
-      .text(
-        16,
-        42,
-        worldState.overworldUnlocked
-          ? "Overworld gate: OPEN (dev U toggles)"
-          : "Overworld gate: LOCKED (press U to unlock)",
-        {
-          color: "#c8b8a0",
-          fontFamily: "system-ui, sans-serif",
-          fontSize: "14px",
-        },
-      )
-      .setScrollFactor(0)
-      .setDepth(10_000);
+    this.renderHud(zone);
 
     this.player = this.add.image(0, 0, "player").setOrigin(0.5, 1);
     this.syncPlayerToGrid();
@@ -284,7 +303,15 @@ export class IsometricScene extends Phaser.Scene {
 
     this.children.removeAll(true);
     this.drawZoneTiles(zone);
+    this.renderHud(zone);
 
+    this.playerGridX = savedX;
+    this.playerGridY = savedY;
+    this.player = this.add.image(0, 0, "player").setOrigin(0.5, 1);
+    this.syncPlayerToGrid();
+  }
+
+  private renderHud(zone: ZoneDefinition): void {
     this.add
       .text(16, 16, zone.name, {
         color: "#f0e6d2",
@@ -310,9 +337,13 @@ export class IsometricScene extends Phaser.Scene {
       .setScrollFactor(0)
       .setDepth(10_000);
 
-    this.playerGridX = savedX;
-    this.playerGridY = savedY;
-    this.player = this.add.image(0, 0, "player").setOrigin(0.5, 1);
-    this.syncPlayerToGrid();
+    this.add
+      .text(16, 64, getPartySummary(), {
+        color: "#d8e8c0",
+        fontFamily: "system-ui, sans-serif",
+        fontSize: "14px",
+      })
+      .setScrollFactor(0)
+      .setDepth(10_000);
   }
 }
