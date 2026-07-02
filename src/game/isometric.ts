@@ -16,6 +16,23 @@ export function gridToScreen(
   };
 }
 
+export function screenToGrid(
+  screenX: number,
+  screenY: number,
+  originX: number,
+  originY: number,
+): GridPoint {
+  const halfW = TILE_WIDTH / 2;
+  const halfH = TILE_HEIGHT / 2;
+  const dx = screenX - originX;
+  const dy = screenY - originY;
+
+  return {
+    x: (dx / halfW + dy / halfH) / 2,
+    y: (dy / halfH - dx / halfW) / 2,
+  };
+}
+
 export function isWithinGrid(
   gridX: number,
   gridY: number,
