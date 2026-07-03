@@ -1,0 +1,122 @@
+import { setOverworldUnlocked } from "../world/worldState";
+import { isVisitorMode } from "../world/worldSession";
+import { QUEST_ORDER, QUESTS } from "./quests";
+import type {
+  QuestEvent,
+  QuestId,
+  QuestObjective,
+  QuestStatus,
+} from "./questTypes";
+
+export const questProgress: Record<QuestId, QuestStatus> = {
+  "grove-arrival": "locked",
+  "first-befriend": "locked",
+  "first-spar": "locked",
+  "reach-village": "locked",
+  "shrine-craft": "locked",
+};
+
+let lastCompletionMessage: string | null = null;
+
+export function initQuestProgress(): void {
+  if (questProgress["grove-arrival"] === "locked") {
+    questProgress["grove-arrival"] = "active";
+  }
+}
+
+export function restoreQuestProgress(
+  saved: Record<QuestId, QuestStatus>,
+): void {
+  for (const id of QUEST_ORDER) {
+    questProgress[id] = saved[id] ?? "locked";
+  }
+  if (!QUEST_ORDER.some((id) => questProgress[id] === "active")) {
+    const next = QUEST_ORDER.find((id) => questProgress[id] !== "complete");
+    if (next) {
+      questProgress[next] = "active";
+    }
+  }
+}
+
+export function getActiveQuestId(): QuestId | null {
+  return QUEST_ORDER.find((id) => questProgress[id] === "active") ?? null;
+}
+
+export function getQuestSummary(): string {
+  const activeId = getActiveQuestId();
+  if (!activeId) {
+    const done = QUEST_ORDER.every((id) => questProgress[id] === "complete");
+    return done ? "Story: complete" : "Story: —";
+  }
+  const index = QUEST_ORDER.indexOf(activeId) + 1;
+  return `Story ${index}/5: ${QUESTS[activeId].title}`;
+}
+
+export function consumeQuestToast(): string | null {
+  const message = lastCompletionMessage;
+  lastCompletionMessage = null;
+  return message;
+}
+
+function objectiveMatches(objective: QuestObjective, event: QuestEvent): boolean {
+  switch (objective.type) {
+    case "enter_zone":
+      return event.type === "enter_zone" && event.zoneId === objective.zoneId;
+    case "befriend_creature":
+      return event.type === "befriend_creature";
+    case "win_spar":
+      return event.type === "win_spar";
+    case "craft_item":
+      return event.type === "craft_item";
+    default:
+      return false;
+  }
+}
+
+function activateNextQuest(completedId: QuestId): void {
+  const index = QUEST_ORDER.indexOf(completedId);
+  const next = QUEST_ORDER[index + 1];
+  if (next && questProgress[next] === "locked") {
+    questProgress[next] = "active";
+  }
+}
+
+function completeQuest(questId: QuestId): void {
+  const quest = QUESTS[questId];
+  questProgress[questId] = "complete";
+  lastCompletionMessage = `Quest complete: ${quest.title}`;
+
+  if (quest.unlocksOverworld) {
+    setOverworldUnlocked(true);
+    lastCompletionMessage += " — Overworld gate opened!";
+  }
+
+  activateNextQuest(questId);
+}
+
+export function recordQuestEvent(event: QuestEvent): boolean {
+  if (isVisitorMode()) {
+    return false;
+  }
+
+  const activeId = getActiveQuestId();
+  if (!activeId) {
+    return false;
+  }
+
+  const quest = QUESTS[activeId];
+  if (!objectiveMatches(quest.objective, event)) {
+    return false;
+  }
+
+  completeQuest(activeId);
+  return true;
+}
+
+export function getGateStatusText(): string {
+  if (questProgress["first-spar"] === "complete") {
+    return "Overworld gate: OPEN";
+  }
+  const sparIndex = QUEST_ORDER.indexOf("first-spar") + 1;
+  return `Overworld gate: LOCKED (Story ${sparIndex}/5)`;
+}

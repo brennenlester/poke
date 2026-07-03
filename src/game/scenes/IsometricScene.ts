@@ -13,7 +13,16 @@ import {
 import { getPartySummary } from "../creatures/party";
 import { getInventorySummary } from "../inventory/playerInventory";
 import { rollWildCreature } from "../encounters/tables";
+import {
+  consumeQuestToast,
+  getGateStatusText,
+  getQuestSummary,
+  recordQuestEvent,
+} from "../story/questProgress";
 import { canOccupy } from "../world/collision";
+import { copyInviteLink } from "../world/invite";
+import { takePendingWorldPosition } from "../world/worldSnapshot";
+import { getHostLabel, isVisitorMode } from "../world/worldSession";
 import {
   STARTING_ZONE_ID,
   getZone,
@@ -48,11 +57,14 @@ export class IsometricScene extends Phaser.Scene {
     D: Phaser.Input.Keyboard.Key;
   };
   private unlockKey!: Phaser.Input.Keyboard.Key;
+  private inviteKey!: Phaser.Input.Keyboard.Key;
   private interactKey!: Phaser.Input.Keyboard.Key;
   private travelSinceEncounter = 0;
   private inEncounter = false;
   private inShrine = false;
   private shrinePrompt?: Phaser.GameObjects.Text;
+  private questToast?: Phaser.GameObjects.Text;
+  private inviteStatus?: Phaser.GameObjects.Text;
   private worldOrigin = { x: 0, y: 0 };
 
   constructor() {
@@ -60,8 +72,15 @@ export class IsometricScene extends Phaser.Scene {
   }
 
   create(): void {
-    const startZone = getZone(STARTING_ZONE_ID);
-    if (startZone.defaultSpawn) {
+    const pending = takePendingWorldPosition();
+    if (pending) {
+      this.currentZoneId = pending.zoneId;
+      this.playerGridX = pending.x;
+      this.playerGridY = pending.y;
+    }
+
+    const startZone = getZone(this.currentZoneId);
+    if (!pending && startZone.defaultSpawn) {
       this.playerGridX = startZone.defaultSpawn.x;
       this.playerGridY = startZone.defaultSpawn.y;
     }
@@ -69,6 +88,7 @@ export class IsometricScene extends Phaser.Scene {
     this.cursors = this.input.keyboard!.createCursorKeys();
     this.wasd = this.input.keyboard!.addKeys("W,A,S,D") as typeof this.wasd;
     this.unlockKey = this.input.keyboard!.addKey("U");
+    this.inviteKey = this.input.keyboard!.addKey("I");
     this.interactKey = this.input.keyboard!.addKey("E");
 
     this.loadZone(this.currentZoneId);
@@ -96,10 +116,16 @@ export class IsometricScene extends Phaser.Scene {
     if (this.inEncounter || this.inShrine) {
       return;
     }
-    if (Phaser.Input.Keyboard.JustDown(this.unlockKey)) {
+    if (import.meta.env.DEV && Phaser.Input.Keyboard.JustDown(this.unlockKey)) {
       toggleOverworldUnlock();
       this.loadZone(this.currentZoneId);
     }
+
+    if (Phaser.Input.Keyboard.JustDown(this.inviteKey)) {
+      void this.tryCopyInvite();
+    }
+
+    this.updateQuestToast();
 
     if (Phaser.Input.Keyboard.JustDown(this.interactKey)) {
       this.tryShrineInteract();
@@ -161,6 +187,9 @@ export class IsometricScene extends Phaser.Scene {
   }
 
   private tryRandomEncounter(step: number): void {
+    if (isVisitorMode()) {
+      return;
+    }
     this.travelSinceEncounter += step;
     if (this.travelSinceEncounter < ENCOUNTER_TRAVEL_THRESHOLD) {
       return;
@@ -215,6 +244,7 @@ export class IsometricScene extends Phaser.Scene {
     this.drawZoneTiles(zone);
     this.drawProps(zone);
     this.renderHud(zone);
+    recordQuestEvent({ type: "enter_zone", zoneId });
 
     this.player = this.add
       .image(0, 0, `player-${this.playerFacing}`)
@@ -375,6 +405,9 @@ export class IsometricScene extends Phaser.Scene {
   }
 
   private tryShrineInteract(): void {
+    if (isVisitorMode()) {
+      return;
+    }
     if (!this.isOnShrineTile()) {
       return;
     }
@@ -400,8 +433,12 @@ export class IsometricScene extends Phaser.Scene {
   }
 
   private renderHud(zone: ZoneDefinition): void {
+    const sessionLabel = isVisitorMode()
+      ? `Visiting: ${getHostLabel()}`
+      : zone.name;
+
     this.add
-      .text(16, 16, zone.name, {
+      .text(16, 16, sessionLabel, {
         color: "#f0e6d2",
         fontFamily: "system-ui, sans-serif",
         fontSize: "18px",
@@ -410,23 +447,25 @@ export class IsometricScene extends Phaser.Scene {
       .setDepth(10_000);
 
     this.add
-      .text(
-        16,
-        42,
-        worldState.overworldUnlocked
-          ? "Overworld gate: OPEN (dev U toggles)"
-          : "Overworld gate: LOCKED (press U to unlock)",
-        {
-          color: "#c8b8a0",
-          fontFamily: "system-ui, sans-serif",
-          fontSize: "14px",
-        },
-      )
+      .text(16, 42, getQuestSummary(), {
+        color: "#e8d8a0",
+        fontFamily: "system-ui, sans-serif",
+        fontSize: "14px",
+      })
       .setScrollFactor(0)
       .setDepth(10_000);
 
     this.add
-      .text(16, 64, getPartySummary(), {
+      .text(16, 64, getGateStatusText(), {
+        color: "#c8b8a0",
+        fontFamily: "system-ui, sans-serif",
+        fontSize: "14px",
+      })
+      .setScrollFactor(0)
+      .setDepth(10_000);
+
+    this.add
+      .text(16, 86, getPartySummary(), {
         color: "#d8e8c0",
         fontFamily: "system-ui, sans-serif",
         fontSize: "14px",
@@ -435,12 +474,85 @@ export class IsometricScene extends Phaser.Scene {
       .setDepth(10_000);
 
     this.add
-      .text(16, 86, getInventorySummary(), {
+      .text(16, 108, getInventorySummary(), {
         color: "#c8b8e8",
         fontFamily: "system-ui, sans-serif",
         fontSize: "13px",
       })
       .setScrollFactor(0)
       .setDepth(10_000);
+
+    if (!isVisitorMode()) {
+      this.inviteStatus = this.add
+        .text(16, 130, "Press I to copy invite link", {
+          color: "#a8c8e8",
+          fontFamily: "system-ui, sans-serif",
+          fontSize: "12px",
+        })
+        .setScrollFactor(0)
+        .setDepth(10_000);
+    } else {
+      this.inviteStatus = this.add
+        .text(16, 130, "Visitor mode — explore only", {
+          color: "#a8a8c8",
+          fontFamily: "system-ui, sans-serif",
+          fontSize: "12px",
+        })
+        .setScrollFactor(0)
+        .setDepth(10_000);
+    }
+  }
+
+  private updateQuestToast(): void {
+    const message = consumeQuestToast();
+    if (!message) {
+      return;
+    }
+
+    this.questToast?.destroy();
+    this.questToast = this.add
+      .text(this.scale.width / 2, 120, message, {
+        color: "#f0e6d2",
+        backgroundColor: "#2a2a3e",
+        fontFamily: "system-ui, sans-serif",
+        fontSize: "15px",
+        padding: { x: 12, y: 8 },
+        align: "center",
+        wordWrap: { width: 360 },
+      })
+      .setOrigin(0.5, 0)
+      .setScrollFactor(0)
+      .setDepth(10_001);
+
+    this.time.delayedCall(2800, () => {
+      this.questToast?.destroy();
+      this.questToast = undefined;
+    });
+  }
+
+  private async tryCopyInvite(): Promise<void> {
+    if (isVisitorMode()) {
+      return;
+    }
+
+    try {
+      const url = await copyInviteLink(
+        this.currentZoneId,
+        this.playerGridX,
+        this.playerGridY,
+      );
+      this.inviteStatus?.setText("Invite link copied!");
+      this.inviteStatus?.setColor("#d8f0c0");
+      this.time.delayedCall(2500, () => {
+        this.inviteStatus?.setText("Press I to copy invite link");
+        this.inviteStatus?.setColor("#a8c8e8");
+      });
+      if (!navigator.clipboard?.writeText) {
+        this.inviteStatus?.setText(`Invite ready (copy from console)`);
+        console.info("Poke invite link:", url);
+      }
+    } catch (error) {
+      console.error(error);
+    }
   }
 }
