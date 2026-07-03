@@ -243,8 +243,8 @@ export class IsometricScene extends Phaser.Scene {
 
     this.drawZoneTiles(zone);
     this.drawProps(zone);
-    this.renderHud(zone);
     recordQuestEvent({ type: "enter_zone", zoneId });
+    this.renderHud(zone);
 
     this.player = this.add
       .image(0, 0, `player-${this.playerFacing}`)
