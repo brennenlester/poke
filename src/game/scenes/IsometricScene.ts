@@ -405,9 +405,6 @@ export class IsometricScene extends Phaser.Scene {
   }
 
   private tryShrineInteract(): void {
-    if (isVisitorMode()) {
-      return;
-    }
     if (!this.isOnShrineTile()) {
       return;
     }
@@ -535,24 +532,32 @@ export class IsometricScene extends Phaser.Scene {
       return;
     }
 
+    const hasClipboard = typeof navigator.clipboard?.writeText === "function";
     try {
       const url = await copyInviteLink(
         this.currentZoneId,
         this.playerGridX,
         this.playerGridY,
       );
-      this.inviteStatus?.setText("Invite link copied!");
-      this.inviteStatus?.setColor("#d8f0c0");
+      if (hasClipboard) {
+        this.inviteStatus?.setText("Invite link copied!");
+        this.inviteStatus?.setColor("#d8f0c0");
+      } else {
+        this.inviteStatus?.setText(`Invite ready (copy from console)`);
+        console.info("Poke invite link:", url);
+      }
       this.time.delayedCall(2500, () => {
         this.inviteStatus?.setText("Press I to copy invite link");
         this.inviteStatus?.setColor("#a8c8e8");
       });
-      if (!navigator.clipboard?.writeText) {
-        this.inviteStatus?.setText(`Invite ready (copy from console)`);
-        console.info("Poke invite link:", url);
-      }
     } catch (error) {
       console.error(error);
+      this.inviteStatus?.setText("Failed to copy invite");
+      this.inviteStatus?.setColor("#f08080");
+      this.time.delayedCall(2500, () => {
+        this.inviteStatus?.setText("Press I to copy invite link");
+        this.inviteStatus?.setColor("#a8c8e8");
+      });
     }
   }
 }

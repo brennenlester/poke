@@ -3,11 +3,11 @@ import "./style.css";
 import { initQuestProgress } from "./game/story/questProgress";
 import { createGame } from "./game/Game";
 import { parseInviteFromUrl } from "./game/world/invite";
-import { applyWorldSnapshot } from "./game/world/worldSnapshot";
+import { applyWorldSnapshot, isValidWorldSnapshot } from "./game/world/worldSnapshot";
 import { setVisitorMode } from "./game/world/worldSession";
 
 const invite = parseInviteFromUrl();
-if (invite) {
+if (invite && isValidWorldSnapshot(invite)) {
   applyWorldSnapshot(invite);
   setVisitorMode(true, invite.hostLabel);
 } else {

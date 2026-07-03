@@ -1,6 +1,6 @@
 import { getHostLabel, isVisitorMode } from "./worldSession";
 import type { WorldSnapshot } from "./worldSnapshot";
-import { exportWorldSnapshot } from "./worldSnapshot";
+import { exportWorldSnapshot, isValidWorldSnapshot } from "./worldSnapshot";
 import type { ZoneId } from "./zoneTypes";
 
 function toBase64Url(value: string): string {
@@ -45,8 +45,8 @@ export function parseInviteFromUrl(): WorldSnapshot | null {
   }
 
   try {
-    const parsed = JSON.parse(fromBase64Url(encoded)) as WorldSnapshot;
-    if (parsed.version !== 1) {
+    const parsed = JSON.parse(fromBase64Url(encoded));
+    if (!isValidWorldSnapshot(parsed)) {
       return null;
     }
     return parsed;
