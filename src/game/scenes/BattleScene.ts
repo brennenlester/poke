@@ -87,6 +87,7 @@ export class BattleScene extends Phaser.Scene {
 
   create(): void {
     ensureCreatureTextures(this);
+    this.scene.bringToTop();
 
     this.add
       .rectangle(0, 0, this.scale.width, this.scale.height, 0x000000, 0.75)

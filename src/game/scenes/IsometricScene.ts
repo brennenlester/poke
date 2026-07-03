@@ -10,8 +10,6 @@ import {
   getBoundaryTextureKey,
   getFloorTextureKey,
 } from "../render/worldTextures";
-import { getPartySummary } from "../creatures/party";
-import { getInventorySummary } from "../inventory/playerInventory";
 import { rollWildCreature } from "../encounters/tables";
 import { canOccupy } from "../world/collision";
 import {
@@ -24,11 +22,17 @@ import {
   getZoneProps,
   propTextureKey,
 } from "../world/zoneProps";
+import {
+  measureStatusPanelHeight,
+  updateStatusPanel,
+} from "../ui/statusPanel";
 
 const FLOOR_LAYER = 0;
 const PROP_LAYER = 0.45;
-/** Fixed depth above all tiles, walls, and props; below HUD (10_000 + scrollFactor 0). */
+/** Fixed depth above all tiles, walls, and props. */
 const PLAYER_DEPTH = 20_000;
+const HUD_GAP = 8;
+const SCREEN_MARGIN = 12;
 const MOVE_SPEED = 6;
 const ENCOUNTER_TRAVEL_THRESHOLD = 0.75;
 const ENCOUNTER_CHANCE = 0.10;
@@ -74,8 +78,6 @@ export class IsometricScene extends Phaser.Scene {
 
     this.loadZone(this.currentZoneId);
 
-    this.cameras.main.startFollow(this.player, true, 0.12, 0.12);
-
     this.events.on("resume", () => {
       this.inEncounter = false;
       this.inShrine = false;
@@ -87,10 +89,10 @@ export class IsometricScene extends Phaser.Scene {
       this.playerGridX = x;
       this.playerGridY = y;
       this.syncPlayerToGrid();
-      this.cameras.main.startFollow(this.player, true, 0.12, 0.12);
     });
 
     this.scale.on("resize", () => this.onResize());
+    window.addEventListener("resize", () => this.onResize());
   }
 
   update(_time: number, delta: number): void {
@@ -215,15 +217,72 @@ export class IsometricScene extends Phaser.Scene {
 
     this.drawZoneTiles(zone);
     this.drawProps(zone);
-    this.renderHud(zone);
 
     this.player = this.add
       .image(0, 0, `player-${this.playerFacing}`)
       .setOrigin(0.5, 1);
     this.syncPlayerToGrid();
-    this.configureCamera(zone);
-    this.cameras.main.startFollow(this.player, true, 0.12, 0.12);
-    this.updateShrinePrompt();
+    this.time.delayedCall(0, () => {
+      this.layoutPlayfield(zone);
+      this.updateShrinePrompt();
+    });
+  }
+
+  private getZoneWorldBounds(zone: ZoneDefinition): {
+    minX: number;
+    minY: number;
+    maxX: number;
+    maxY: number;
+    width: number;
+    height: number;
+  } {
+    const minX = this.worldOrigin.x - 80;
+    const minY = this.worldOrigin.y - 80;
+    const maxX = this.worldOrigin.x + zone.width * TILE_WIDTH + 80;
+    const maxY = this.worldOrigin.y + zone.height * TILE_HEIGHT + 80;
+    return {
+      minX,
+      minY,
+      maxX,
+      maxY,
+      width: maxX - minX,
+      height: maxY - minY,
+    };
+  }
+
+  private layoutPlayfield(zone: ZoneDefinition): void {
+    updateStatusPanel(zone);
+
+    const bounds = this.getZoneWorldBounds(zone);
+    const viewportW = window.innerWidth - SCREEN_MARGIN * 2;
+    const viewportH = window.innerHeight - SCREEN_MARGIN * 2;
+    const statusHeight = measureStatusPanelHeight();
+    const boardDisplaySize = Math.max(
+      1,
+      Math.floor(
+        Math.min(viewportW, viewportH - HUD_GAP - statusHeight),
+      ),
+    );
+
+    const playfield = document.getElementById("playfield");
+    const gameEl = document.getElementById("game");
+    if (playfield) {
+      playfield.style.width = `${boardDisplaySize}px`;
+    }
+    if (gameEl) {
+      gameEl.style.height = `${boardDisplaySize}px`;
+    }
+
+    const cam = this.cameras.main;
+    const zoom = Math.min(
+      this.scale.width / bounds.width,
+      this.scale.height / bounds.height,
+    );
+    cam.setZoom(zoom);
+    cam.centerOn(
+      bounds.minX + bounds.width / 2,
+      bounds.minY + bounds.height / 2,
+    );
   }
 
   private getZoneWorldOrigin(_zone: ZoneDefinition): { x: number; y: number } {
@@ -242,25 +301,12 @@ export class IsometricScene extends Phaser.Scene {
     );
   }
 
-  private configureCamera(zone: ZoneDefinition): void {
-    const minX = this.worldOrigin.x - 80;
-    const minY = this.worldOrigin.y - 80;
-    const maxX = this.worldOrigin.x + zone.width * TILE_WIDTH + 80;
-    const maxY = this.worldOrigin.y + zone.height * TILE_HEIGHT + 80;
-    const worldW = maxX - minX;
-    const worldH = maxY - minY;
-
-    this.cameras.main.setBounds(minX, minY, worldW, worldH);
-
-    const zoomX = (this.scale.width * 0.94) / worldW;
-    const zoomY = (this.scale.height * 0.9) / worldH;
-    const zoom = Phaser.Math.Clamp(Math.min(zoomX, zoomY), 0.85, 2.8);
-    this.cameras.main.setZoom(zoom);
-  }
-
   private onResize(): void {
-    const zone = getZone(this.currentZoneId);
-    this.configureCamera(zone);
+    if (!this.player) {
+      return;
+    }
+    this.layoutPlayfield(getZone(this.currentZoneId));
+    this.layoutShrinePrompt();
   }
 
   private drawZoneTiles(zone: ZoneDefinition): void {
@@ -359,7 +405,7 @@ export class IsometricScene extends Phaser.Scene {
     const show = this.isOnShrineTile();
     if (show && !this.shrinePrompt) {
       this.shrinePrompt = this.add
-        .text(this.scale.width / 2, this.scale.height - 48, "Press E — Moon Shrine", {
+        .text(0, 0, "Press E — Moon Shrine", {
           color: "#e8dff8",
           backgroundColor: "#2a2440cc",
           fontFamily: "system-ui, sans-serif",
@@ -369,10 +415,21 @@ export class IsometricScene extends Phaser.Scene {
         .setOrigin(0.5)
         .setScrollFactor(0)
         .setDepth(10_001);
+      this.layoutShrinePrompt();
     } else if (!show && this.shrinePrompt) {
       this.shrinePrompt.destroy();
       this.shrinePrompt = undefined;
     }
+  }
+
+  private layoutShrinePrompt(): void {
+    if (!this.shrinePrompt) {
+      return;
+    }
+    this.shrinePrompt.setPosition(
+      this.scale.width / 2,
+      this.scale.height - 24,
+    );
   }
 
   private tryShrineInteract(): void {
@@ -396,50 +453,5 @@ export class IsometricScene extends Phaser.Scene {
       screen.y + TILE_HEIGHT / 2 - 2,
     );
     this.player.setDepth(PLAYER_DEPTH);
-  }
-
-  private renderHud(zone: ZoneDefinition): void {
-    this.add
-      .text(16, 16, zone.name, {
-        color: "#f0e6d2",
-        fontFamily: "system-ui, sans-serif",
-        fontSize: "18px",
-      })
-      .setScrollFactor(0)
-      .setDepth(10_000);
-
-    this.add
-      .text(
-        16,
-        42,
-        worldState.overworldUnlocked
-          ? "Overworld gate: OPEN (dev U toggles)"
-          : "Overworld gate: LOCKED (press U to unlock)",
-        {
-          color: "#c8b8a0",
-          fontFamily: "system-ui, sans-serif",
-          fontSize: "14px",
-        },
-      )
-      .setScrollFactor(0)
-      .setDepth(10_000);
-
-    this.add
-      .text(16, 64, getPartySummary(), {
-        color: "#d8e8c0",
-        fontFamily: "system-ui, sans-serif",
-        fontSize: "14px",
-      })
-      .setScrollFactor(0)
-      .setDepth(10_000);
-
-    this.add
-      .text(16, 86, getInventorySummary(), {
-        color: "#c8b8e8",
-        fontFamily: "system-ui, sans-serif",
-        fontSize: "13px",
-      })
-      .setScrollFactor(0)
-      .setDepth(10_000);
   }
 }

@@ -6,9 +6,78 @@
 
 html,
 body,
-#game {
+#app {
   width: 100%;
   height: 100%;
   overflow: hidden;
   background: #1a1a2e;
+}
+
+#app {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+}
+
+#playfield {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  max-width: calc(100vw - 24px);
+  max-height: calc(100vh - 24px);
+}
+
+#game {
+  flex: 0 0 auto;
+  width: 100%;
+  overflow: hidden;
+  line-height: 0;
+  position: relative;
+}
+
+#game canvas {
+  display: block;
+}
+
+#status-panel {
+  flex: 0 0 auto;
+  margin-top: 8px;
+  padding: 12px 14px;
+  background: #141422;
+  border: 1px solid #3a3a58;
+  border-radius: 4px;
+  font-family: system-ui, sans-serif;
+  overflow: hidden;
+}
+
+.status-line {
+  line-height: 1.45;
+  word-wrap: break-word;
+  overflow-wrap: anywhere;
+}
+
+.status-line + .status-line {
+  margin-top: 6px;
+}
+
+.status-zone {
+  color: #f0e6d2;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.status-gate {
+  color: #c8b8a0;
+  font-size: 13px;
+}
+
+.status-party {
+  color: #d8e8c0;
+  font-size: 13px;
+}
+
+.status-materials {
+  color: #c8b8e8;
+  font-size: 13px;
 }
