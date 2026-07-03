@@ -89,8 +89,8 @@ export function applyWorldSnapshot(snapshot: WorldSnapshot): void {
     throw new Error("Invalid world snapshot schema");
   }
 
-  setOverworldUnlocked(snapshot.overworldUnlocked);
   restoreQuestProgress(snapshot.questProgress);
+  setOverworldUnlocked(questProgress["first-spar"] === "complete");
   setPartyFromSnapshot(snapshot.party, snapshot.nextInstanceId);
   setInventoryFromSnapshot(snapshot.materials, snapshot.items);
   pendingPosition = snapshot.position;

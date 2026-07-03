@@ -87,6 +87,7 @@ export class ShrineScene extends Phaser.Scene {
           align: "center",
         })
         .setOrigin(0.5);
+      this.setupCloseControls(cx, cy + 175);
       return;
     }
 
@@ -110,8 +111,14 @@ export class ShrineScene extends Phaser.Scene {
       })
       .setOrigin(0.5);
 
+    this.setupCloseControls(cx, cy + 195);
+
+    this.renderTabContent();
+  }
+
+  private setupCloseControls(cx: number, closeY: number): void {
     this.add
-      .text(cx, cy + 195, "Close", {
+      .text(cx, closeY, "Close", {
         color: "#1a1a2e",
         backgroundColor: "#c8b8e8",
         fontFamily: "system-ui, sans-serif",
@@ -123,8 +130,6 @@ export class ShrineScene extends Phaser.Scene {
       .on("pointerdown", () => this.closeShrine());
 
     this.input.keyboard?.once("keydown-ESC", () => this.closeShrine());
-
-    this.renderTabContent();
   }
 
   private drawRuneBorder(cx: number, cy: number, w: number, h: number): void {
