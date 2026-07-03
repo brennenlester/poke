@@ -20,6 +20,8 @@ import {
   getEligibleCreaturesForConsumable,
   isConsumableItem,
 } from "../shrine/consumables";
+import { recordQuestEvent } from "../story/questProgress";
+import { isVisitorMode } from "../world/worldSession";
 
 const MOON_PANEL = 0x2a2440;
 const MOON_STROKE = 0xc8b8e8;
@@ -76,6 +78,19 @@ export class ShrineScene extends Phaser.Scene {
       })
       .setOrigin(0.5);
 
+    if (isVisitorMode()) {
+      this.add
+        .text(cx, cy, "Visitors can view this shrine, but only\nthe host can craft or fuse.", {
+          color: MOON_TEXT,
+          fontFamily: "system-ui, sans-serif",
+          fontSize: "16px",
+          align: "center",
+        })
+        .setOrigin(0.5);
+      this.setupCloseControls(cx, cy + 175);
+      return;
+    }
+
     this.buildTabs(cx, cy - 105);
     this.contentContainer = this.add.container(0, 0);
     this.statusText = this.add
@@ -96,8 +111,14 @@ export class ShrineScene extends Phaser.Scene {
       })
       .setOrigin(0.5);
 
+    this.setupCloseControls(cx, cy + 195);
+
+    this.renderTabContent();
+  }
+
+  private setupCloseControls(cx: number, closeY: number): void {
     this.add
-      .text(cx, cy + 195, "Close", {
+      .text(cx, closeY, "Close", {
         color: "#1a1a2e",
         backgroundColor: "#c8b8e8",
         fontFamily: "system-ui, sans-serif",
@@ -109,8 +130,6 @@ export class ShrineScene extends Phaser.Scene {
       .on("pointerdown", () => this.closeShrine());
 
     this.input.keyboard?.once("keydown-ESC", () => this.closeShrine());
-
-    this.renderTabContent();
   }
 
   private drawRuneBorder(cx: number, cy: number, w: number, h: number): void {
@@ -227,6 +246,7 @@ export class ShrineScene extends Phaser.Scene {
       btn.setInteractive({ useHandCursor: true });
       btn.on("pointerdown", () => {
         if (craftItem(recipe)) {
+          recordQuestEvent({ type: "craft_item" });
           this.setStatus(`Crafted ${recipe.name}!`);
           this.renderTabContent();
         }

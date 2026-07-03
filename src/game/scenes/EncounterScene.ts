@@ -2,6 +2,7 @@ import Phaser from "phaser";
 import { getCreatureDefinition } from "../creatures/catalog";
 import { addToParty, hasCreature } from "../creatures/party";
 import { ensureCreatureTextures } from "../creatures/sprites";
+import { isVisitorMode } from "../world/worldSession";
 
 const WANDERER_PARTNER = {
   name: "Wanderer's Spark",
@@ -133,7 +134,7 @@ export class EncounterScene extends Phaser.Scene {
   }
 
   private tryBefriend(): void {
-    if (this.actionTaken) {
+    if (this.actionTaken || isVisitorMode()) {
       return;
     }
     this.actionTaken = true;
@@ -172,7 +173,7 @@ export class EncounterScene extends Phaser.Scene {
   }
 
   private startSpar(): void {
-    if (this.actionTaken) {
+    if (this.actionTaken || isVisitorMode()) {
       return;
     }
     this.actionTaken = true;
@@ -181,7 +182,7 @@ export class EncounterScene extends Phaser.Scene {
       wildCreatureId: this.creatureId,
       wandererPartner: WANDERER_PARTNER,
     });
-    this.scene.pause();
+    this.scene.stop("EncounterScene");
   }
 
   private flee(): void {

@@ -1,5 +1,6 @@
 import { getCreatureDefinition } from "./catalog";
 import { createNewCreatureProgress } from "../progression/leveling";
+import { recordQuestEvent } from "../story/questProgress";
 import type { CreatureInstance } from "./types";
 
 export const playerParty = {
@@ -7,6 +8,19 @@ export const playerParty = {
 };
 
 let nextInstanceId = 1;
+
+export function getNextInstanceId(): number {
+  return nextInstanceId;
+}
+
+export function setPartyFromSnapshot(
+  creatures: CreatureInstance[],
+  nextId: number,
+): void {
+  playerParty.creatures.length = 0;
+  playerParty.creatures.push(...structuredClone(creatures));
+  nextInstanceId = Math.max(1, nextId);
+}
 
 export function addToParty(definitionId: string): CreatureInstance {
   const def = getCreatureDefinition(definitionId);
@@ -18,6 +32,7 @@ export function addToParty(definitionId: string): CreatureInstance {
     ...createNewCreatureProgress(),
   };
   playerParty.creatures.push(instance);
+  recordQuestEvent({ type: "befriend_creature" });
   return instance;
 }
 

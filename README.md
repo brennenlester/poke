@@ -26,15 +26,32 @@ At **Moon Shrine**, stand on the moon altar and press **E** to open the shrine U
 
 ### World zones (dev)
 
-The confined starting region has three zones — **Whisper Grove** → **Moon Shrine** → **Hearth Crossing** — connected by map exits. The **Folklore Overworld** north of Hearth Crossing is locked until the story gate opens.
+The confined starting region has three zones — **Whisper Grove** → **Moon Shrine** → **Hearth Crossing** — connected by map exits. The **Folklore Overworld** north of Hearth Crossing is locked until you complete **Story 3/5** (win a training spar).
 
-- **U** — dev cheat: toggle overworld gate unlock (until BRE-12 quests wire the real flag)
+### Story quests
+
+Five guided beats appear in the HUD (`Story N/5: …`). Progress is saved in-session:
+
+1. Arrive in Whisper Grove (automatic on start)
+2. Befriend a wild creature
+3. Win a training spar — **opens the overworld gate**
+4. Reach Hearth Crossing
+5. Craft a relic at Moon Shrine
+
+Gate status is shown as `Overworld gate: LOCKED (Story 3/5)` until quest 3 completes.
+
+### Friend invites
+
+As host, press **I** to copy an invite link. The URL encodes a snapshot of your world (party, inventory, quests, position). Open that link in another browser tab to join as a **visitor** — read-only exploration of the host's world (no encounters, crafting, or quest progress).
+
+- **U** — dev-only cheat: toggle overworld gate (local development)
 
 ## Project structure
 
 - `src/game/` — Phaser 3 game bootstrap and scenes
 - `src/game/isometric.ts` — isometric grid ↔ screen coordinate helpers
-- `src/game/world/` — zone maps, collision, `worldState.overworldUnlocked`
+- `src/game/story/` — quest definitions and progress tracking
+- `src/game/world/` — zone maps, collision, `worldState.overworldUnlocked`, invite snapshots
 - `src/game/creatures/` — folklore creature catalog and party collection
 - `src/game/inventory/` — spar-win materials and crafted items
 - `src/game/crafting/` — shrine craft recipes

@@ -1,0 +1,21 @@
+export type SessionRole = "host" | "visitor";
+
+let role: SessionRole = "host";
+let hostLabel = "Your world";
+
+export function setVisitorMode(enabled: boolean, label = "Friend's world"): void {
+  role = enabled ? "visitor" : "host";
+  hostLabel = enabled ? label : "Your world";
+}
+
+export function isVisitorMode(): boolean {
+  return role === "visitor";
+}
+
+export function getSessionRole(): SessionRole {
+  return role;
+}
+
+export function getHostLabel(): string {
+  return hostLabel;
+}

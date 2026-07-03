@@ -86,6 +86,7 @@ export class BattleScene extends Phaser.Scene {
   }
 
   create(): void {
+    this.scene.bringToTop();
     ensureCreatureTextures(this);
 
     this.add

@@ -3,6 +3,7 @@ import { playerParty } from "../creatures/party";
 import { getMaterialForCreature, getMaterialName } from "../inventory/materials";
 import { addMaterial } from "../inventory/playerInventory";
 import { grantSparXp, XP_PER_SPAR_WIN } from "../progression/leveling";
+import { recordQuestEvent } from "../story/questProgress";
 
 export type SparRewardSummary = {
   materialId?: string;
@@ -44,6 +45,8 @@ export function grantSparRewards(
       summary.creatureName = getCreatureDefinition(creature.definitionId).name;
     }
   }
+
+  recordQuestEvent({ type: "win_spar" });
 
   return summary;
 }

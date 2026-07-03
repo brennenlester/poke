@@ -38,6 +38,14 @@ export function consumeItem(itemId: string): boolean {
   return true;
 }
 
+export function setInventoryFromSnapshot(
+  materials: Record<string, number>,
+  items: Record<string, number>,
+): void {
+  playerInventory.materials = { ...materials };
+  playerInventory.items = { ...items };
+}
+
 export function getInventorySummary(): string {
   const mats = Object.entries(playerInventory.materials)
     .filter(([, count]) => count > 0)
