@@ -5,6 +5,7 @@ export type PropKind =
   | "fern"
   | "shrine-altar"
   | "standing-stone"
+  | "pebble-pile"
   | "hearth"
   | "cottage"
   | "gate";
@@ -23,18 +24,23 @@ export const ZONE_PROPS: Partial<Record<ZoneId, ZoneProp[]>> = {
     { x: 7, y: 7, kind: "tree" },
     { x: 3, y: 5, kind: "fern" },
     { x: 6, y: 4, kind: "standing-stone" },
+    { x: 1, y: 6, kind: "pebble-pile" },
   ],
   shrine: [
     { x: 5, y: 5, kind: "shrine-altar" },
     { x: 3, y: 3, kind: "standing-stone" },
     { x: 7, y: 3, kind: "standing-stone" },
     { x: 4, y: 7, kind: "standing-stone" },
+    { x: 6, y: 6, kind: "pebble-pile" },
+    { x: 2, y: 5, kind: "fern" },
   ],
   village: [
     { x: 2, y: 3, kind: "cottage" },
     { x: 4, y: 4, kind: "hearth" },
     { x: 7, y: 6, kind: "hearth" },
     { x: 5, y: 0, kind: "gate" },
+    { x: 6, y: 2, kind: "pebble-pile" },
+    { x: 3, y: 6, kind: "fern" },
   ],
   overworld: [
     { x: 4, y: 5, kind: "tree" },

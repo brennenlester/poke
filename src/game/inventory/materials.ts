@@ -11,6 +11,10 @@ export const CREATURE_MATERIALS: Record<string, string> = {
 };
 
 export const MATERIAL_NAMES: Record<string, string> = {
+  wood: "Wood",
+  stone: "Stone",
+  "wild-fiber": "Wild Fiber",
+  pebble: "Pebble",
   "moss-fiber": "Moss Fiber",
   "ember-ash": "Ember Ash",
   "brook-pearl": "Brook Pearl",
@@ -23,6 +27,8 @@ export const MATERIAL_NAMES: Record<string, string> = {
 };
 
 export const ITEM_NAMES: Record<string, string> = {
+  "wood-cudgel": "Wood Cudgel",
+  "stone-knife": "Stone Knife",
   "ember-charm": "Ember Charm",
   "moss-salve": "Moss Salve",
   "brook-tonic": "Brook Tonic",

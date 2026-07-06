@@ -13,6 +13,21 @@ export type CraftRecipe = {
 
 export const CRAFT_RECIPES: CraftRecipe[] = [
   {
+    id: "wood-cudgel",
+    name: "Wood Cudgel",
+    outputItemId: "wood-cudgel",
+    materials: [{ materialId: "wood", count: 3 }],
+  },
+  {
+    id: "stone-knife",
+    name: "Stone Knife",
+    outputItemId: "stone-knife",
+    materials: [
+      { materialId: "stone", count: 2 },
+      { materialId: "wood", count: 1 },
+    ],
+  },
+  {
     id: "ember-charm",
     name: "Ember Charm",
     outputItemId: "ember-charm",
