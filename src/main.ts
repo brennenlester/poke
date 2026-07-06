@@ -2,6 +2,7 @@ import Phaser from "phaser";
 import "./style.css";
 import { initQuestProgress } from "./game/story/questProgress";
 import { createGame } from "./game/Game";
+import { initStatusPanelControls } from "./game/ui/statusPanel";
 import { parseInviteFromUrl } from "./game/world/invite";
 import {
   applyWorldSnapshot,
@@ -37,6 +38,7 @@ if (invite && isValidWorldSnapshot(invite)) {
 }
 
 const game = createGame("game");
+initStatusPanelControls();
 
 // ponytail: dev-only encounter preview via ?encounter=ember-wisp or ?spar=ember-wisp
 if (import.meta.env.DEV && !invite) {
