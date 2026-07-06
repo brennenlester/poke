@@ -26,6 +26,11 @@ import { copyInviteLink } from "../world/invite";
 import { takePendingWorldPosition } from "../world/worldSnapshot";
 import { isVisitorMode } from "../world/worldSession";
 import {
+  notifyWorldChanged,
+  persistHostSave,
+  updateHostPosition,
+} from "../world/worldSave";
+import {
   STARTING_ZONE_ID,
   getZone,
 } from "../world/zones";
@@ -128,6 +133,7 @@ export class IsometricScene extends Phaser.Scene {
     }
     if (import.meta.env.DEV && Phaser.Input.Keyboard.JustDown(this.unlockKey)) {
       toggleOverworldUnlock();
+      notifyWorldChanged();
       this.loadZone(this.currentZoneId);
     }
 
@@ -178,6 +184,11 @@ export class IsometricScene extends Phaser.Scene {
       this.playerGridX = nextX;
       this.playerGridY = nextY;
       this.syncPlayerToGrid();
+      updateHostPosition(
+        this.currentZoneId,
+        this.playerGridX,
+        this.playerGridY,
+      );
       this.tryZoneTransition(zone);
       this.tryRandomEncounter(step);
     }
@@ -263,6 +274,12 @@ export class IsometricScene extends Phaser.Scene {
     this.time.delayedCall(0, () => {
       this.layoutPlayfield(zone);
       this.updateShrinePrompt();
+      updateHostPosition(
+        this.currentZoneId,
+        this.playerGridX,
+        this.playerGridY,
+      );
+      persistHostSave();
     });
   }
 

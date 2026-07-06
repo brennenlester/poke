@@ -1,4 +1,5 @@
 import { getItemName, getMaterialName } from "./materials";
+import { notifyWorldChanged } from "../world/worldSaveSchedule";
 
 export const playerInventory = {
   materials: {} as Record<string, number>,
@@ -16,6 +17,7 @@ export function getItemCount(itemId: string): number {
 export function addMaterial(materialId: string, amount = 1): void {
   playerInventory.materials[materialId] =
     getMaterialCount(materialId) + amount;
+  notifyWorldChanged();
 }
 
 export function consumeMaterial(materialId: string, amount: number): boolean {
@@ -23,11 +25,13 @@ export function consumeMaterial(materialId: string, amount: number): boolean {
     return false;
   }
   playerInventory.materials[materialId] -= amount;
+  notifyWorldChanged();
   return true;
 }
 
 export function addItem(itemId: string, amount = 1): void {
   playerInventory.items[itemId] = getItemCount(itemId) + amount;
+  notifyWorldChanged();
 }
 
 export function consumeItem(itemId: string): boolean {
@@ -35,6 +39,7 @@ export function consumeItem(itemId: string): boolean {
     return false;
   }
   playerInventory.items[itemId] -= 1;
+  notifyWorldChanged();
   return true;
 }
 

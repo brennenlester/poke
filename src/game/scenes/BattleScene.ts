@@ -17,6 +17,7 @@ import {
   formatRewardMessage,
   grantSparRewards,
 } from "../battle/sparRewards";
+import { notifyWorldChanged } from "../world/worldSaveSchedule";
 
 type WandererPartner = {
   name: string;
@@ -403,6 +404,7 @@ export class BattleScene extends Phaser.Scene {
     } else {
       this.log("You lost the training spar...");
     }
+    notifyWorldChanged();
 
     this.time.delayedCall(1800, () => {
       this.scene.stop("BattleScene");
