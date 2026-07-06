@@ -304,7 +304,7 @@ export class IsometricScene extends Phaser.Scene {
       if (playfield) {
         playfield.style.width = `${boardDisplaySize}px`;
       }
-      updateStatusPanel(zone, { preserveSession: true });
+      updateStatusPanel(zone);
       const statusHeight = measureStatusPanelHeight();
       const nextSize = Math.max(
         1,
@@ -323,6 +323,7 @@ export class IsometricScene extends Phaser.Scene {
       gameEl.style.height = `${boardDisplaySize}px`;
     }
     updateStatusPanel(zone);
+    this.scale.refresh();
 
     const cam = this.cameras.main;
     cam.setBounds(bounds.minX, bounds.minY, bounds.width, bounds.height);

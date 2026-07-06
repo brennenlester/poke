@@ -16,10 +16,7 @@ function defaultSessionColor(): string {
   return isVisitorMode() ? "#a8a8c8" : "#a8c8e8";
 }
 
-export function updateStatusPanel(
-  zone: ZoneDefinition,
-  options?: { preserveSession?: boolean },
-): void {
+export function updateStatusPanel(zone: ZoneDefinition): void {
   const zoneEl = document.getElementById("status-zone");
   const questEl = document.getElementById("status-quest");
   const gateEl = document.getElementById("status-gate");
@@ -44,7 +41,7 @@ export function updateStatusPanel(
   if (materialsEl) {
     materialsEl.textContent = getInventorySummary();
   }
-  if (sessionEl && !inviteFeedbackActive && !options?.preserveSession) {
+  if (sessionEl && !inviteFeedbackActive) {
     sessionEl.textContent = defaultSessionText();
     sessionEl.style.color = defaultSessionColor();
   }
