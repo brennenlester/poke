@@ -2,15 +2,8 @@ import Phaser from "phaser";
 import { getCreatureDefinition } from "../creatures/catalog";
 import { addToParty, hasCreature } from "../creatures/party";
 import { ensureCreatureTextures } from "../creatures/sprites";
+import { UNARMED_WANDERER } from "../battle/wandererWeapons";
 import { isVisitorMode } from "../world/worldSession";
-
-const WANDERER_PARTNER = {
-  name: "Wanderer's Spark",
-  maxHp: 24,
-  attack: 6,
-  defense: 4,
-  moves: [{ id: "nudge", name: "Nudge", power: 5 }],
-};
 
 const PANEL_WIDTH = 420;
 const PANEL_HEIGHT = 280;
@@ -180,7 +173,7 @@ export class EncounterScene extends Phaser.Scene {
 
     this.scene.launch("BattleScene", {
       wildCreatureId: this.creatureId,
-      wandererPartner: WANDERER_PARTNER,
+      wandererPartner: UNARMED_WANDERER,
     });
     this.scene.stop("EncounterScene");
   }

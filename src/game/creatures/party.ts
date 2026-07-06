@@ -1,5 +1,6 @@
 import { getCreatureDefinition } from "./catalog";
 import { createNewCreatureProgress } from "../progression/leveling";
+import { hasCraftedWeapon } from "../battle/wandererWeapons";
 import { recordQuestEvent } from "../story/questProgress";
 import { notifyWorldChanged } from "../world/worldSaveSchedule";
 import type { CreatureInstance } from "./types";
@@ -52,6 +53,10 @@ export function getEffectiveAttack(creature: CreatureInstance): number {
   return def.attack + (creature.attackBonus ?? 0);
 }
 
+export function hasLivingPartyMembers(): boolean {
+  return playerParty.creatures.some((creature) => creature.currentHp > 0);
+}
+
 export function getPartySummary(): string {
   if (playerParty.creatures.length === 0) {
     return "Party: (empty)";
@@ -71,7 +76,11 @@ export function getPartySummary(): string {
     const buffLabel = buffs.length > 0 ? ` [${buffs.join(",")}]` : "";
     return `${def.name} Lv.${c.level}${buffLabel}`;
   });
-  return `Party: ${names.join(", ")}`;
+  const summary = `Party: ${names.join(", ")}`;
+  if (!hasLivingPartyMembers() && !hasCraftedWeapon()) {
+    return `${summary} — Craft a weapon from wood/stone, or revive at Moon Shrine.`;
+  }
+  return summary;
 }
 
 export function getCreatureInstance(instanceId: string): CreatureInstance | undefined {
