@@ -6,7 +6,19 @@
     <title>Poke</title>
   </head>
   <body>
-    <div id="game"></div>
+    <div id="app">
+      <div id="playfield">
+        <div id="game"></div>
+        <div id="status-panel" aria-label="Player status">
+          <div id="status-zone" class="status-line status-zone"></div>
+          <div id="status-quest" class="status-line status-quest"></div>
+          <div id="status-gate" class="status-line status-gate"></div>
+          <div id="status-party" class="status-line status-party"></div>
+          <div id="status-materials" class="status-line status-materials"></div>
+          <div id="status-session" class="status-line status-session"></div>
+        </div>
+      </div>
+    </div>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>
