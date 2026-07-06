@@ -69,6 +69,7 @@ export class IsometricScene extends Phaser.Scene {
   private shrinePrompt?: Phaser.GameObjects.Text;
   private questToast?: Phaser.GameObjects.Text;
   private worldOrigin = { x: 0, y: 0 };
+  private onWindowResize = () => this.onResize();
 
   constructor() {
     super({ key: "IsometricScene" });
@@ -113,7 +114,11 @@ export class IsometricScene extends Phaser.Scene {
     });
 
     this.scale.on("resize", () => this.onResize());
-    window.addEventListener("resize", () => this.onResize());
+    window.addEventListener("resize", this.onWindowResize);
+  }
+
+  shutdown(): void {
+    window.removeEventListener("resize", this.onWindowResize);
   }
 
   update(_time: number, delta: number): void {
@@ -283,25 +288,41 @@ export class IsometricScene extends Phaser.Scene {
   }
 
   private layoutPlayfield(zone: ZoneDefinition): void {
-    updateStatusPanel(zone);
-
     const bounds = this.getZoneWorldBounds(zone);
     const viewportW = window.innerWidth - SCREEN_MARGIN * 2;
     const viewportH = window.innerHeight - SCREEN_MARGIN * 2;
-    const statusHeight = measureStatusPanelHeight();
-    const boardDisplaySize = Math.max(
-      1,
-      Math.floor(Math.min(viewportW, viewportH - HUD_GAP - statusHeight)),
-    );
 
     const playfield = document.getElementById("playfield");
     const gameEl = document.getElementById("game");
+
+    let boardDisplaySize = Math.max(
+      1,
+      Math.floor(Math.min(viewportW, viewportH - HUD_GAP - 96)),
+    );
+
+    for (let pass = 0; pass < 3; pass += 1) {
+      if (playfield) {
+        playfield.style.width = `${boardDisplaySize}px`;
+      }
+      updateStatusPanel(zone, { preserveSession: true });
+      const statusHeight = measureStatusPanelHeight();
+      const nextSize = Math.max(
+        1,
+        Math.floor(Math.min(viewportW, viewportH - HUD_GAP - statusHeight)),
+      );
+      if (nextSize === boardDisplaySize) {
+        break;
+      }
+      boardDisplaySize = nextSize;
+    }
+
     if (playfield) {
       playfield.style.width = `${boardDisplaySize}px`;
     }
     if (gameEl) {
       gameEl.style.height = `${boardDisplaySize}px`;
     }
+    updateStatusPanel(zone);
 
     const cam = this.cameras.main;
     cam.setBounds(bounds.minX, bounds.minY, bounds.width, bounds.height);

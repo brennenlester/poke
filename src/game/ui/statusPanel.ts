@@ -4,6 +4,8 @@ import { getGateStatusText, getQuestSummary } from "../story/questProgress";
 import { getHostLabel, isVisitorMode } from "../world/worldSession";
 import type { ZoneDefinition } from "../world/zoneTypes";
 
+let inviteFeedbackActive = false;
+
 function defaultSessionText(): string {
   return isVisitorMode()
     ? "Visitor mode — explore only"
@@ -14,7 +16,10 @@ function defaultSessionColor(): string {
   return isVisitorMode() ? "#a8a8c8" : "#a8c8e8";
 }
 
-export function updateStatusPanel(zone: ZoneDefinition): void {
+export function updateStatusPanel(
+  zone: ZoneDefinition,
+  options?: { preserveSession?: boolean },
+): void {
   const zoneEl = document.getElementById("status-zone");
   const questEl = document.getElementById("status-quest");
   const gateEl = document.getElementById("status-gate");
@@ -39,13 +44,14 @@ export function updateStatusPanel(zone: ZoneDefinition): void {
   if (materialsEl) {
     materialsEl.textContent = getInventorySummary();
   }
-  if (sessionEl) {
+  if (sessionEl && !inviteFeedbackActive && !options?.preserveSession) {
     sessionEl.textContent = defaultSessionText();
     sessionEl.style.color = defaultSessionColor();
   }
 }
 
 export function setInviteStatus(message: string, color: string): void {
+  inviteFeedbackActive = true;
   const sessionEl = document.getElementById("status-session");
   if (sessionEl) {
     sessionEl.textContent = message;
@@ -54,7 +60,12 @@ export function setInviteStatus(message: string, color: string): void {
 }
 
 export function resetInviteStatus(): void {
-  setInviteStatus(defaultSessionText(), defaultSessionColor());
+  inviteFeedbackActive = false;
+  const sessionEl = document.getElementById("status-session");
+  if (sessionEl) {
+    sessionEl.textContent = defaultSessionText();
+    sessionEl.style.color = defaultSessionColor();
+  }
 }
 
 export function measureStatusPanelHeight(): number {
