@@ -70,6 +70,7 @@ export class IsometricScene extends Phaser.Scene {
   private questToast?: Phaser.GameObjects.Text;
   private worldOrigin = { x: 0, y: 0 };
   private onWindowResize = () => this.onResize();
+  private layoutLocked = false;
 
   constructor() {
     super({ key: "IsometricScene" });
@@ -288,7 +289,12 @@ export class IsometricScene extends Phaser.Scene {
   }
 
   private layoutPlayfield(zone: ZoneDefinition): void {
-    const bounds = this.getZoneWorldBounds(zone);
+    if (this.layoutLocked) {
+      return;
+    }
+    this.layoutLocked = true;
+    try {
+      const bounds = this.getZoneWorldBounds(zone);
     const viewportW = window.innerWidth - SCREEN_MARGIN * 2;
     const viewportH = window.innerHeight - SCREEN_MARGIN * 2;
 
@@ -332,6 +338,9 @@ export class IsometricScene extends Phaser.Scene {
       this.scale.height / bounds.height,
     );
     cam.setZoom(Phaser.Math.Clamp(zoom, 0.85, 2.8));
+    } finally {
+      this.layoutLocked = false;
+    }
   }
 
   private getZoneWorldOrigin(_zone: ZoneDefinition): { x: number; y: number } {
@@ -351,7 +360,7 @@ export class IsometricScene extends Phaser.Scene {
   }
 
   private onResize(): void {
-    if (!this.player) {
+    if (this.layoutLocked || !this.player) {
       return;
     }
     this.layoutPlayfield(getZone(this.currentZoneId));
