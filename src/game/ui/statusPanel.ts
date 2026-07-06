@@ -1,6 +1,6 @@
 import { getPartySummary } from "../creatures/party";
 import { getInventorySummary } from "../inventory/playerInventory";
-import { getGateStatusText, getQuestSummary } from "../story/questProgress";
+import { getGateStatusText, getQuestHint, getQuestSummary } from "../story/questProgress";
 import { getHostLabel, isVisitorMode } from "../world/worldSession";
 import type { ZoneDefinition } from "../world/zoneTypes";
 
@@ -19,6 +19,7 @@ function defaultSessionColor(): string {
 export function updateStatusPanel(zone: ZoneDefinition): void {
   const zoneEl = document.getElementById("status-zone");
   const questEl = document.getElementById("status-quest");
+  const questHintEl = document.getElementById("status-quest-hint");
   const gateEl = document.getElementById("status-gate");
   const partyEl = document.getElementById("status-party");
   const materialsEl = document.getElementById("status-materials");
@@ -31,6 +32,9 @@ export function updateStatusPanel(zone: ZoneDefinition): void {
   }
   if (questEl) {
     questEl.textContent = getQuestSummary();
+  }
+  if (questHintEl) {
+    questHintEl.textContent = getQuestHint();
   }
   if (gateEl) {
     gateEl.textContent = getGateStatusText();

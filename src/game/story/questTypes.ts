@@ -18,6 +18,7 @@ export type QuestObjective =
 export type QuestDefinition = {
   id: QuestId;
   title: string;
+  hint: string;
   objective: QuestObjective;
   unlocksOverworld?: boolean;
 };
