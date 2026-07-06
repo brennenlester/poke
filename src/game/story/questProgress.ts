@@ -10,7 +10,6 @@ import type {
 } from "./questTypes";
 
 export const questProgress: Record<QuestId, QuestStatus> = {
-  "grove-arrival": "locked",
   "first-befriend": "locked",
   "first-spar": "locked",
   "reach-village": "locked",
@@ -19,9 +18,11 @@ export const questProgress: Record<QuestId, QuestStatus> = {
 
 let lastCompletionMessage: string | null = null;
 
+const STORY_QUEST_COUNT = QUEST_ORDER.length;
+
 export function initQuestProgress(): void {
-  if (questProgress["grove-arrival"] === "locked") {
-    questProgress["grove-arrival"] = "active";
+  if (questProgress["first-befriend"] === "locked") {
+    questProgress["first-befriend"] = "active";
   }
 }
 
@@ -50,7 +51,7 @@ export function getQuestSummary(): string {
     return done ? "Story: complete" : "Story: —";
   }
   const index = QUEST_ORDER.indexOf(activeId) + 1;
-  return `Story ${index}/5: ${QUESTS[activeId].title}`;
+  return `Story ${index}/${STORY_QUEST_COUNT}: ${QUESTS[activeId].title}`;
 }
 
 export function getQuestHint(): string {
@@ -131,5 +132,5 @@ export function getGateStatusText(): string {
     return "Overworld gate: OPEN";
   }
   const sparIndex = QUEST_ORDER.indexOf("first-spar") + 1;
-  return `Overworld gate: LOCKED (Story ${sparIndex}/5)`;
+  return `Overworld gate: LOCKED (Story ${sparIndex}/${STORY_QUEST_COUNT})`;
 }

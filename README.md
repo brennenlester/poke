@@ -26,19 +26,18 @@ At **Moon Shrine**, stand on the moon altar and press **E** to open the shrine U
 
 ### World zones (dev)
 
-The confined starting region has three zones — **Whisper Grove** → **Moon Shrine** → **Hearth Crossing** — connected by map exits. The **Folklore Overworld** north of Hearth Crossing is locked until you complete **Story 3/5** (win a training spar).
+The confined starting region has three zones — **Whisper Grove** → **Moon Shrine** → **Hearth Crossing** — connected by map exits. The **Folklore Overworld** north of Hearth Crossing is locked until you complete **Story 2/4** (win a training spar).
 
 ### Story quests
 
-Five guided beats appear in the HUD (`Story N/5: …`). Progress persists across refresh for host sessions:
+Four guided beats appear in the HUD (`Story N/4: …`). Progress persists across refresh for host sessions:
 
-1. Arrive in Whisper Grove (automatic on start)
-2. Befriend a wild creature
-3. Win a training spar — **opens the overworld gate**
-4. Reach Hearth Crossing
-5. Craft a relic at Moon Shrine
+1. Befriend a wild creature
+2. Win a training spar — **opens the overworld gate**
+3. Reach Hearth Crossing
+4. Craft a relic at Moon Shrine
 
-Gate status is shown as `Overworld gate: LOCKED (Story 3/5)` until quest 3 completes.
+Gate status is shown as `Overworld gate: LOCKED (Story 2/4)` until the spar quest completes.
 
 ### Friend invites
 
