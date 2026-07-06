@@ -1,7 +1,6 @@
 import type { QuestDefinition, QuestId } from "./questTypes";
 
 export const QUEST_ORDER: QuestId[] = [
-  "grove-arrival",
   "first-befriend",
   "first-spar",
   "reach-village",
@@ -9,12 +8,6 @@ export const QUEST_ORDER: QuestId[] = [
 ];
 
 export const QUESTS: Record<QuestId, QuestDefinition> = {
-  "grove-arrival": {
-    id: "grove-arrival",
-    title: "Arrive in Whisper Grove",
-    hint: "Walk around Whisper Grove to get your bearings.",
-    objective: { type: "enter_zone", zoneId: "grove" },
-  },
   "first-befriend": {
     id: "first-befriend",
     title: "Befriend a wild creature",

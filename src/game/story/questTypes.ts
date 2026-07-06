@@ -1,7 +1,6 @@
 import type { ZoneId } from "../world/zoneTypes";
 
 export type QuestId =
-  | "grove-arrival"
   | "first-befriend"
   | "first-spar"
   | "reach-village"
