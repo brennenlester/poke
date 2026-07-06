@@ -1,5 +1,6 @@
 import { setOverworldUnlocked } from "../world/worldState";
 import { isVisitorMode } from "../world/worldSession";
+import { notifyWorldChanged } from "../world/worldSaveSchedule";
 import { QUEST_ORDER, QUESTS } from "./quests";
 import type {
   QuestEvent,
@@ -92,6 +93,7 @@ function completeQuest(questId: QuestId): void {
   }
 
   activateNextQuest(questId);
+  notifyWorldChanged();
 }
 
 export function recordQuestEvent(event: QuestEvent): boolean {

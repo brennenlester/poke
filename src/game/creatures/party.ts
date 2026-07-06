@@ -1,6 +1,7 @@
 import { getCreatureDefinition } from "./catalog";
 import { createNewCreatureProgress } from "../progression/leveling";
 import { recordQuestEvent } from "../story/questProgress";
+import { notifyWorldChanged } from "../world/worldSaveSchedule";
 import type { CreatureInstance } from "./types";
 
 export const playerParty = {
@@ -33,6 +34,7 @@ export function addToParty(definitionId: string): CreatureInstance {
   };
   playerParty.creatures.push(instance);
   recordQuestEvent({ type: "befriend_creature" });
+  notifyWorldChanged();
   return instance;
 }
 

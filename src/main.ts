@@ -3,15 +3,37 @@ import "./style.css";
 import { initQuestProgress } from "./game/story/questProgress";
 import { createGame } from "./game/Game";
 import { parseInviteFromUrl } from "./game/world/invite";
-import { applyWorldSnapshot, isValidWorldSnapshot } from "./game/world/worldSnapshot";
+import {
+  applyWorldSnapshot,
+  isValidWorldSnapshot,
+} from "./game/world/worldSnapshot";
+import {
+  clearHostSave,
+  loadHostSave,
+  restoreHostSave,
+  resumeHostPersist,
+  suspendHostPersist,
+} from "./game/world/worldSave";
 import { setVisitorMode } from "./game/world/worldSession";
+
+const params = new URLSearchParams(window.location.search);
+if (params.has("new")) {
+  clearHostSave();
+}
 
 const invite = parseInviteFromUrl();
 if (invite && isValidWorldSnapshot(invite)) {
+  suspendHostPersist();
   applyWorldSnapshot(invite);
   setVisitorMode(true, invite.hostLabel);
+  resumeHostPersist();
 } else {
-  initQuestProgress();
+  const saved = loadHostSave();
+  if (saved) {
+    restoreHostSave(saved);
+  } else {
+    initQuestProgress();
+  }
 }
 
 const game = createGame("game");

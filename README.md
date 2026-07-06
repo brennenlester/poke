@@ -30,7 +30,7 @@ The confined starting region has three zones — **Whisper Grove** → **Moon Sh
 
 ### Story quests
 
-Five guided beats appear in the HUD (`Story N/5: …`). Progress is saved in-session:
+Five guided beats appear in the HUD (`Story N/5: …`). Progress persists across refresh for host sessions:
 
 1. Arrive in Whisper Grove (automatic on start)
 2. Befriend a wild creature
@@ -43,6 +43,10 @@ Gate status is shown as `Overworld gate: LOCKED (Story 3/5)` until quest 3 compl
 ### Friend invites
 
 As host, press **I** to copy an invite link. The URL encodes a snapshot of your world (party, inventory, quests, position). Open that link in another browser tab to join as a **visitor** — read-only exploration of the host's world (no encounters, crafting, or quest progress).
+
+### Save and resume
+
+Host progress (party, inventory, quests, position, gate) persists in `localStorage` across refresh. Append `?new=1` to start a fresh game and clear the saved host state. Visitor `?join=` links always take precedence over local save.
 
 - **U** — dev-only cheat: toggle overworld gate (local development)
 

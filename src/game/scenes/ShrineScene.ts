@@ -21,6 +21,7 @@ import {
   isConsumableItem,
 } from "../shrine/consumables";
 import { recordQuestEvent } from "../story/questProgress";
+import { notifyWorldChanged } from "../world/worldSaveSchedule";
 import { isVisitorMode } from "../world/worldSession";
 
 const MOON_PANEL = 0x2a2440;
@@ -379,6 +380,7 @@ export class ShrineScene extends Phaser.Scene {
         const result = applyShrineFusion(entry.instanceId, itemId);
         this.setStatus(result.message);
         if (result.ok) {
+          notifyWorldChanged();
           this.selectedItemId = null;
         }
         this.renderTabContent();
@@ -523,6 +525,7 @@ export class ShrineScene extends Phaser.Scene {
         const result = applyConsumable(entry.instanceId, itemId);
         this.setStatus(result.message);
         if (result.ok) {
+          notifyWorldChanged();
           this.selectedItemId = null;
         }
         this.renderTabContent();
