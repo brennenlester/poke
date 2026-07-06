@@ -45,7 +45,7 @@ As host, press **I** to copy an invite link. The URL encodes a snapshot of your 
 
 ### Save and resume
 
-Host progress (party, inventory, quests, position, gate) persists in `localStorage` across refresh. Append `?new=1` to start a fresh game and clear the saved host state. Visitor `?join=` links always take precedence over local save.
+Host progress (party, inventory, quests, position, gate) persists in `localStorage` across refresh. Use **Reset game** in the status panel, or append `?new=1`, to start fresh. Visitor `?join=` links always take precedence over local save.
 
 - **U** — dev-only cheat: toggle overworld gate (local development)
 

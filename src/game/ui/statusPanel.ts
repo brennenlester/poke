@@ -2,6 +2,7 @@ import { getPartySummary } from "../creatures/party";
 import { getInventorySummary } from "../inventory/playerInventory";
 import { getGateStatusText, getQuestHint, getQuestSummary } from "../story/questProgress";
 import { getHostLabel, isVisitorMode } from "../world/worldSession";
+import { resetHostGame } from "../world/worldSave";
 import type { ZoneDefinition } from "../world/zoneTypes";
 
 let inviteFeedbackActive = false;
@@ -72,4 +73,29 @@ export function resetInviteStatus(): void {
 export function measureStatusPanelHeight(): number {
   const panel = document.getElementById("status-panel");
   return panel?.offsetHeight ?? 96;
+}
+
+let statusControlsInitialized = false;
+
+export function initStatusPanelControls(): void {
+  if (statusControlsInitialized) {
+    return;
+  }
+  statusControlsInitialized = true;
+
+  const resetBtn = document.getElementById("reset-game-btn");
+  if (resetBtn) {
+    resetBtn.hidden = isVisitorMode();
+    resetBtn.addEventListener("click", () => {
+      if (isVisitorMode()) {
+        return;
+      }
+      const confirmed = window.confirm(
+        "Reset your world? Party, quests, and progress will be cleared.",
+      );
+      if (confirmed) {
+        resetHostGame();
+      }
+    });
+  }
 }
