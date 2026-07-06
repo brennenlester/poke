@@ -219,7 +219,8 @@ export class BattleScene extends Phaser.Scene {
     y: number,
     move: MoveDefinition,
   ): Phaser.GameObjects.Text {
-    return this.addActionButton(x, y, move.name, () => {
+    const damage = calcDamage(this.player, move, this.wild);
+    return this.addActionButton(x, y, `${move.name}  −${damage}`, () => {
       if (!this.waitingForPlayer || this.switchMenuOpen) {
         return;
       }
@@ -342,7 +343,8 @@ export class BattleScene extends Phaser.Scene {
     this.waitingForPlayer = false;
     const damage = calcDamage(this.player, move, this.wild);
     applyDamage(this.wild, damage);
-    this.log(`${this.player.name} used ${move.name} (${damage} dmg).`);
+    this.showDamageCounter("wild", damage);
+    this.log(`${this.player.name} used ${move.name}.`);
     this.refreshHp();
 
     if (isFainted(this.wild)) {
@@ -357,7 +359,8 @@ export class BattleScene extends Phaser.Scene {
     const move = pickRandomMove(this.wild);
     const damage = calcDamage(this.wild, move, this.player);
     applyDamage(this.player, damage);
-    this.log(`${this.wild.name} used ${move.name} (${damage} dmg).`);
+    this.showDamageCounter("player", damage);
+    this.log(`${this.wild.name} used ${move.name}.`);
     this.refreshHp();
 
     if (isFainted(this.player)) {
@@ -384,6 +387,34 @@ export class BattleScene extends Phaser.Scene {
     this.playerHpText.setText(
       `${this.player.name}: ${this.player.currentHp}/${this.player.maxHp} HP`,
     );
+  }
+
+  private showDamageCounter(
+    target: "wild" | "player",
+    damage: number,
+  ): void {
+    const anchor = target === "wild" ? this.wildHpText : this.playerHpText;
+    const color = target === "wild" ? "#ff8866" : "#ffaa44";
+    const counter = this.add
+      .text(anchor.x + anchor.width + 8, anchor.y - 4, `−${damage}`, {
+        color,
+        fontFamily: "system-ui, sans-serif",
+        fontSize: "22px",
+        fontStyle: "bold",
+        stroke: "#1a1a2e",
+        strokeThickness: 3,
+      })
+      .setOrigin(0, 0.5)
+      .setDepth(10_000);
+
+    this.tweens.add({
+      targets: counter,
+      y: counter.y - 36,
+      alpha: 0,
+      duration: 900,
+      ease: "Cubic.easeOut",
+      onComplete: () => counter.destroy(),
+    });
   }
 
   private log(message: string): void {
