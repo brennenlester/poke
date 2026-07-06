@@ -53,6 +53,17 @@ export function getQuestSummary(): string {
   return `Story ${index}/5: ${QUESTS[activeId].title}`;
 }
 
+export function getQuestHint(): string {
+  const activeId = getActiveQuestId();
+  if (!activeId) {
+    const done = QUEST_ORDER.every((id) => questProgress[id] === "complete");
+    return done
+      ? "All story beats finished — explore freely or press I to invite friends."
+      : "";
+  }
+  return `Next: ${QUESTS[activeId].hint}`;
+}
+
 export function consumeQuestToast(): string | null {
   const message = lastCompletionMessage;
   lastCompletionMessage = null;

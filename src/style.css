@@ -70,6 +70,13 @@ body,
 .status-quest {
   color: #e8d8a0;
   font-size: 13px;
+  font-weight: 600;
+}
+
+.status-quest-hint {
+  color: #d0c090;
+  font-size: 12px;
+  font-style: italic;
 }
 
 .status-gate {
