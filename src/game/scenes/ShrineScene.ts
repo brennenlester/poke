@@ -29,8 +29,16 @@ const MOON_STROKE = 0xc8b8e8;
 const MOON_ACCENT = 0x8a7aa8;
 const MOON_TEXT = "#e8dff8";
 const MOON_MUTED = "#b8a8d0";
+const PANEL_WIDTH = 480;
+const PANEL_HEIGHT = 420;
 
 type Tab = "craft" | "fusion" | "use";
+
+type ContentBounds = {
+  top: number;
+  bottom: number;
+  height: number;
+};
 
 export class ShrineScene extends Phaser.Scene {
   private activeTab: Tab = "craft";
@@ -38,6 +46,11 @@ export class ShrineScene extends Phaser.Scene {
   private statusText!: Phaser.GameObjects.Text;
   private contentContainer!: Phaser.GameObjects.Container;
   private tabButtons: Phaser.GameObjects.Text[] = [];
+  private panelCenter = { x: 0, y: 0 };
+  private contentBounds: ContentBounds = { top: 0, bottom: 0, height: 0 };
+  private contentScroll = 0;
+  private contentHeight = 0;
+  private contentMask?: Phaser.Display.Masks.GeometryMask;
 
   constructor() {
     super({ key: "ShrineScene" });
@@ -54,13 +67,14 @@ export class ShrineScene extends Phaser.Scene {
 
     const cx = this.scale.width / 2;
     const cy = this.scale.height / 2;
+    this.panelCenter = { x: cx, y: cy };
 
     const panel = this.add
-      .rectangle(cx, cy, 480, 380, MOON_PANEL, 0.97)
+      .rectangle(cx, cy, PANEL_WIDTH, PANEL_HEIGHT, MOON_PANEL, 0.97)
       .setStrokeStyle(3, MOON_STROKE);
     void panel;
 
-    this.drawRuneBorder(cx, cy, 500, 400);
+    this.drawRuneBorder(cx, cy, PANEL_WIDTH + 20, PANEL_HEIGHT + 20);
 
     this.add
       .text(cx, cy - 165, "Moon Shrine", {
@@ -92,27 +106,34 @@ export class ShrineScene extends Phaser.Scene {
       return;
     }
 
-    this.buildTabs(cx, cy - 105);
+    this.buildTabs(cx, cy - 118);
     this.contentContainer = this.add.container(0, 0);
+    this.contentBounds = {
+      top: cy - 72,
+      bottom: cy + 118,
+      height: 190,
+    };
+    this.setupContentMask(cx);
+
     this.statusText = this.add
-      .text(cx, cy + 155, "", {
+      .text(cx, cy + 142, "", {
         color: MOON_TEXT,
         fontFamily: "system-ui, sans-serif",
         fontSize: "14px",
         align: "center",
-        wordWrap: { width: 420 },
+        wordWrap: { width: 400 },
       })
       .setOrigin(0.5);
 
     this.add
-      .text(cx, cy + 175, "Press Esc or click Close to leave", {
+      .text(cx, cy + 166, "Press Esc or click Close to leave", {
         color: MOON_MUTED,
         fontFamily: "system-ui, sans-serif",
         fontSize: "12px",
       })
       .setOrigin(0.5);
 
-    this.setupCloseControls(cx, cy + 195);
+    this.setupCloseControls(cx, cy + 190);
 
     this.renderTabContent();
   }
@@ -131,6 +152,50 @@ export class ShrineScene extends Phaser.Scene {
       .on("pointerdown", () => this.closeShrine());
 
     this.input.keyboard?.once("keydown-ESC", () => this.closeShrine());
+  }
+
+  private setupContentMask(cx: number): void {
+    const maskGraphics = this.make.graphics({ x: 0, y: 0 });
+    maskGraphics.fillStyle(0xffffff, 1);
+    maskGraphics.fillRect(
+      cx - PANEL_WIDTH / 2 + 12,
+      this.contentBounds.top,
+      PANEL_WIDTH - 24,
+      this.contentBounds.height,
+    );
+    this.contentMask = maskGraphics.createGeometryMask();
+    this.contentContainer.setMask(this.contentMask);
+
+    this.input.on(
+      "wheel",
+      (
+        _pointer: Phaser.Input.Pointer,
+        _objects: Phaser.GameObjects.GameObject[],
+        _deltaX: number,
+        deltaY: number,
+      ) => {
+        this.scrollContent(deltaY);
+      },
+    );
+  }
+
+  private scrollContent(deltaY: number): void {
+    const maxScroll = Math.max(0, this.contentHeight - this.contentBounds.height);
+    if (maxScroll <= 0) {
+      return;
+    }
+    this.contentScroll = Phaser.Math.Clamp(
+      this.contentScroll + deltaY * 0.35,
+      0,
+      maxScroll,
+    );
+    this.contentContainer.setY(-this.contentScroll);
+  }
+
+  private resetContentScroll(): void {
+    this.contentScroll = 0;
+    this.contentHeight = 0;
+    this.contentContainer.setY(0);
   }
 
   private drawRuneBorder(cx: number, cy: number, w: number, h: number): void {
@@ -193,6 +258,7 @@ export class ShrineScene extends Phaser.Scene {
 
   private renderTabContent(): void {
     this.contentContainer.removeAll(true);
+    this.resetContentScroll();
     if (this.activeTab === "craft") {
       this.renderCraftTab();
     } else if (this.activeTab === "use") {
@@ -203,14 +269,20 @@ export class ShrineScene extends Phaser.Scene {
   }
 
   private renderCraftTab(): void {
-    const cx = this.scale.width / 2;
-    let y = this.scale.height / 2 - 95;
+    const cx = this.panelCenter.x;
+    let y = this.contentBounds.top;
 
     for (const recipe of CRAFT_RECIPES) {
       const row = this.buildRecipeRow(cx, y, recipe);
       this.contentContainer.add(row);
-      y += 45;
+      const label = row[0] as Phaser.GameObjects.Text;
+      const rowHeight = Math.max(label.height + 4, 34);
+      const button = row[1] as Phaser.GameObjects.Text;
+      button.setY(y + rowHeight / 2);
+      y += rowHeight;
     }
+
+    this.contentHeight = y - this.contentBounds.top;
   }
 
   private buildRecipeRow(
@@ -228,10 +300,10 @@ export class ShrineScene extends Phaser.Scene {
         color: MOON_TEXT,
         fontFamily: "system-ui, sans-serif",
         fontSize: "13px",
-        lineSpacing: 4,
-        wordWrap: { width: 280, useAdvancedWrap: true },
+        lineSpacing: 2,
+        wordWrap: { width: 260, useAdvancedWrap: true },
       })
-      .setOrigin(0, 0.5);
+      .setOrigin(0, 0);
     objects.push(label);
 
     const craftable = canCraft(recipe);
@@ -260,14 +332,14 @@ export class ShrineScene extends Phaser.Scene {
   }
 
   private renderFusionTab(): void {
-    const cx = this.scale.width / 2;
-    const cy = this.scale.height / 2;
+    const cx = this.panelCenter.x;
+    const contentTop = this.contentBounds.top;
 
     const ownedItems = FUSION_ITEM_IDS.filter((id) => getItemCount(id) > 0);
 
     if (ownedItems.length === 0) {
       const empty = this.add
-        .text(cx, cy - 20, "Craft items first, then return to fuse.", {
+        .text(cx, contentTop + 24, "Craft items first, then return to fuse.", {
           color: MOON_MUTED,
           fontFamily: "system-ui, sans-serif",
           fontSize: "15px",
@@ -279,7 +351,7 @@ export class ShrineScene extends Phaser.Scene {
 
     if (!this.selectedItemId) {
       const prompt = this.add
-        .text(cx, cy - 70, "Choose an item to fuse:", {
+        .text(cx, contentTop + 8, "Choose an item to fuse:", {
           color: MOON_TEXT,
           fontFamily: "system-ui, sans-serif",
           fontSize: "15px",
@@ -287,7 +359,7 @@ export class ShrineScene extends Phaser.Scene {
         .setOrigin(0.5);
       this.contentContainer.add(prompt);
 
-      let y = cy - 30;
+      let y = contentTop + 40;
       for (const itemId of ownedItems) {
         const btn = this.add
           .text(cx, y, `${getItemName(itemId)} (×${getItemCount(itemId)})`, {
@@ -317,7 +389,7 @@ export class ShrineScene extends Phaser.Scene {
       .join("; ");
 
     const header = this.add
-      .text(cx, cy - 80, `${getItemName(itemId)} — ${effectDesc}`, {
+      .text(cx, contentTop + 8, `${getItemName(itemId)} — ${effectDesc}`, {
         color: MOON_MUTED,
         fontFamily: "system-ui, sans-serif",
         fontSize: "12px",
@@ -328,7 +400,7 @@ export class ShrineScene extends Phaser.Scene {
     this.contentContainer.add(header);
 
     const back = this.add
-      .text(cx - 180, cy - 80, "← Back", {
+      .text(cx - 180, contentTop + 8, "← Back", {
         color: MOON_TEXT,
         fontFamily: "system-ui, sans-serif",
         fontSize: "13px",
@@ -353,7 +425,7 @@ export class ShrineScene extends Phaser.Scene {
         ? "Fusion already applied to all eligible creatures."
         : "No creatures at the required level.";
       const none = this.add
-        .text(cx, cy, message, {
+        .text(cx, contentTop + 56, message, {
           color: MOON_MUTED,
           fontFamily: "system-ui, sans-serif",
           fontSize: "14px",
@@ -363,7 +435,7 @@ export class ShrineScene extends Phaser.Scene {
       return;
     }
 
-    let y = cy - 40;
+    let y = contentTop + 48;
     for (const entry of eligible) {
       const label = `${entry.name} Lv.${entry.level}`;
 
@@ -393,8 +465,8 @@ export class ShrineScene extends Phaser.Scene {
   }
 
   private renderUseTab(): void {
-    const cx = this.scale.width / 2;
-    const cy = this.scale.height / 2;
+    const cx = this.panelCenter.x;
+    const contentTop = this.contentBounds.top;
 
     const consumableIds = CONSUMABLE_ITEM_IDS.filter(
       (id) => getItemCount(id) > 0,
@@ -402,7 +474,7 @@ export class ShrineScene extends Phaser.Scene {
 
     if (consumableIds.length === 0) {
       const empty = this.add
-        .text(cx, cy - 20, "Craft Brook Tonic or Moonwake Draught first.", {
+        .text(cx, contentTop + 24, "Craft Brook Tonic or Moonwake Draught first.", {
           color: MOON_MUTED,
           fontFamily: "system-ui, sans-serif",
           fontSize: "15px",
@@ -414,7 +486,7 @@ export class ShrineScene extends Phaser.Scene {
 
     if (!this.selectedItemId || !isConsumableItem(this.selectedItemId)) {
       const prompt = this.add
-        .text(cx, cy - 70, "Choose a consumable:", {
+        .text(cx, contentTop + 8, "Choose a consumable:", {
           color: MOON_TEXT,
           fontFamily: "system-ui, sans-serif",
           fontSize: "15px",
@@ -422,7 +494,7 @@ export class ShrineScene extends Phaser.Scene {
         .setOrigin(0.5);
       this.contentContainer.add(prompt);
 
-      let y = cy - 30;
+      let y = contentTop + 40;
       for (const itemId of consumableIds) {
         const consumable = getConsumable(itemId)!;
         const effectLabel =
@@ -461,7 +533,7 @@ export class ShrineScene extends Phaser.Scene {
         : "Revives fainted creatures to 50% max HP";
 
     const header = this.add
-      .text(cx, cy - 80, `${getItemName(itemId)} — ${effectLabel}`, {
+      .text(cx, contentTop + 8, `${getItemName(itemId)} — ${effectLabel}`, {
         color: MOON_MUTED,
         fontFamily: "system-ui, sans-serif",
         fontSize: "12px",
@@ -472,7 +544,7 @@ export class ShrineScene extends Phaser.Scene {
     this.contentContainer.add(header);
 
     const back = this.add
-      .text(cx - 180, cy - 80, "← Back", {
+      .text(cx - 180, contentTop + 8, "← Back", {
         color: MOON_TEXT,
         fontFamily: "system-ui, sans-serif",
         fontSize: "13px",
@@ -494,7 +566,7 @@ export class ShrineScene extends Phaser.Scene {
           ? "No injured creatures to heal."
           : "No fainted creatures to revive.";
       const none = this.add
-        .text(cx, cy, message, {
+        .text(cx, contentTop + 56, message, {
           color: MOON_MUTED,
           fontFamily: "system-ui, sans-serif",
           fontSize: "14px",
@@ -504,7 +576,7 @@ export class ShrineScene extends Phaser.Scene {
       return;
     }
 
-    let y = cy - 40;
+    let y = contentTop + 48;
     for (const entry of eligible) {
       const hpLabel =
         entry.currentHp <= 0
