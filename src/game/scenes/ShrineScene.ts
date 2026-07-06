@@ -204,12 +204,12 @@ export class ShrineScene extends Phaser.Scene {
 
   private renderCraftTab(): void {
     const cx = this.scale.width / 2;
-    let y = this.scale.height / 2 - 75;
+    let y = this.scale.height / 2 - 95;
 
     for (const recipe of CRAFT_RECIPES) {
       const row = this.buildRecipeRow(cx, y, recipe);
       this.contentContainer.add(row);
-      y += 55;
+      y += 45;
     }
   }
 
@@ -224,10 +224,12 @@ export class ShrineScene extends Phaser.Scene {
       (m) => `${getMaterialName(m.materialId)}×${m.count} (${getMaterialCount(m.materialId)})`,
     );
     const label = this.add
-      .text(cx - 100, y, `${recipe.name}\n${costParts.join(" + ")}`, {
+      .text(cx - 190, y, `${recipe.name}\n${costParts.join(" + ")}`, {
         color: MOON_TEXT,
         fontFamily: "system-ui, sans-serif",
-        fontSize: "14px",
+        fontSize: "13px",
+        lineSpacing: 4,
+        wordWrap: { width: 280, useAdvancedWrap: true },
       })
       .setOrigin(0, 0.5);
     objects.push(label);
