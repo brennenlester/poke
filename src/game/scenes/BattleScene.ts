@@ -17,15 +17,16 @@ import {
   formatRewardMessage,
   grantSparRewards,
 } from "../battle/sparRewards";
+import {
+  buildArmedWanderer,
+  getBestWeaponId,
+  hasCraftedWeapon,
+  resolveWandererForBattle,
+  type WandererPartner,
+} from "../battle/wandererWeapons";
 import { notifyWorldChanged } from "../world/worldSaveSchedule";
 
-type WandererPartner = {
-  name: string;
-  maxHp: number;
-  attack: number;
-  defense: number;
-  moves: MoveDefinition[];
-};
+type WandererPartnerData = WandererPartner;
 
 export class BattleScene extends Phaser.Scene {
   private wildCreatureId!: string;
@@ -38,8 +39,11 @@ export class BattleScene extends Phaser.Scene {
   private waitingForPlayer = true;
   private forcedSwitch = false;
   private switchMenuOpen = false;
+  private wandererFallbackOpen = false;
+  private usingArmedWanderer = false;
   private actionButtons: Phaser.GameObjects.Text[] = [];
   private switchMenuObjects: Phaser.GameObjects.GameObject[] = [];
+  private wandererFallbackObjects: Phaser.GameObjects.GameObject[] = [];
 
   constructor() {
     super({ key: "BattleScene" });
@@ -47,15 +51,18 @@ export class BattleScene extends Phaser.Scene {
 
   init(data: {
     wildCreatureId: string;
-    wandererPartner: WandererPartner;
+    wandererPartner: WandererPartnerData;
   }): void {
     this.wildCreatureId = data.wildCreatureId;
     this.waitingForPlayer = true;
     this.partyInstanceIndex = -1;
     this.forcedSwitch = false;
     this.switchMenuOpen = false;
+    this.wandererFallbackOpen = false;
+    this.usingArmedWanderer = false;
     this.actionButtons = [];
     this.switchMenuObjects = [];
+    this.wandererFallbackObjects = [];
 
     const wildDef = getCreatureDefinition(data.wildCreatureId);
     this.wild = {
@@ -75,15 +82,21 @@ export class BattleScene extends Phaser.Scene {
       this.partyInstanceIndex = activeIndex;
       this.player = this.combatantFromPartyIndex(activeIndex);
     } else {
-      this.player = {
-        name: data.wandererPartner.name,
-        maxHp: data.wandererPartner.maxHp,
-        currentHp: data.wandererPartner.maxHp,
-        attack: data.wandererPartner.attack,
-        defense: data.wandererPartner.defense,
-        moves: data.wandererPartner.moves,
-      };
+      const wanderer = resolveWandererForBattle(data.wandererPartner);
+      this.usingArmedWanderer = hasCraftedWeapon();
+      this.player = this.combatantFromWanderer(wanderer);
     }
+  }
+
+  private combatantFromWanderer(wanderer: WandererPartnerData): BattleCombatant {
+    return {
+      name: wanderer.name,
+      maxHp: wanderer.maxHp,
+      currentHp: wanderer.maxHp,
+      attack: wanderer.attack,
+      defense: wanderer.defense,
+      moves: wanderer.moves,
+    };
   }
 
   create(): void {
@@ -175,6 +188,7 @@ export class BattleScene extends Phaser.Scene {
   private buildActionButtons(): void {
     this.clearActionButtons();
     this.hideSwitchMenu();
+    this.hideWandererFallbackMenu();
 
     const cx = this.scale.width / 2;
     let buttonY = 320;
@@ -221,7 +235,7 @@ export class BattleScene extends Phaser.Scene {
   ): Phaser.GameObjects.Text {
     const damage = calcDamage(this.player, move, this.wild);
     return this.addActionButton(x, y, `${move.name}  −${damage}`, () => {
-      if (!this.waitingForPlayer || this.switchMenuOpen) {
+      if (!this.waitingForPlayer || this.switchMenuOpen || this.wandererFallbackOpen) {
         return;
       }
       this.playerTurn(move);
@@ -311,6 +325,103 @@ export class BattleScene extends Phaser.Scene {
     this.switchMenuOpen = false;
   }
 
+  private showWandererFallbackMenu(): void {
+    if (this.wandererFallbackOpen) {
+      return;
+    }
+
+    this.wandererFallbackOpen = true;
+    const cx = this.scale.width / 2;
+    const panelY = this.scale.height / 2;
+    const weaponId = getBestWeaponId();
+    const armed = weaponId ? buildArmedWanderer(weaponId) : undefined;
+
+    const panel = this.add
+      .rectangle(cx, panelY, 340, 180, 0x2a2a3e, 0.98)
+      .setStrokeStyle(2, 0xf0e6d2);
+    this.wandererFallbackObjects.push(panel);
+
+    const title = this.add
+      .text(cx, panelY - 50, "Your party has fainted!", {
+        color: "#f0e6d2",
+        fontFamily: "system-ui, sans-serif",
+        fontSize: "16px",
+      })
+      .setOrigin(0.5);
+    this.wandererFallbackObjects.push(title);
+
+    const subtitle = this.add
+      .text(
+        cx,
+        panelY - 20,
+        armed ? `Fight as ${armed.name}?` : "No weapon available.",
+        {
+          color: "#c8b8a0",
+          fontFamily: "system-ui, sans-serif",
+          fontSize: "14px",
+          align: "center",
+          wordWrap: { width: 300 },
+        },
+      )
+      .setOrigin(0.5);
+    this.wandererFallbackObjects.push(subtitle);
+
+    if (armed) {
+      const fight = this.add
+        .text(cx, panelY + 30, "Fight as Wanderer", {
+          color: "#1a1a2e",
+          backgroundColor: "#c8dce8",
+          fontFamily: "system-ui, sans-serif",
+          fontSize: "16px",
+          padding: { x: 16, y: 8 },
+        })
+        .setOrigin(0.5)
+        .setInteractive({ useHandCursor: true });
+      fight.on("pointerdown", () => this.switchToArmedWanderer());
+      this.wandererFallbackObjects.push(fight);
+    }
+
+    const retreat = this.add
+      .text(cx, panelY + 70, "Retreat", {
+        color: "#1a1a2e",
+        backgroundColor: "#c8b8a0",
+        fontFamily: "system-ui, sans-serif",
+        fontSize: "14px",
+        padding: { x: 12, y: 6 },
+      })
+      .setOrigin(0.5)
+      .setInteractive({ useHandCursor: true });
+    retreat.on("pointerdown", () => this.endBattle(false));
+    this.wandererFallbackObjects.push(retreat);
+  }
+
+  private hideWandererFallbackMenu(): void {
+    for (const object of this.wandererFallbackObjects) {
+      object.destroy();
+    }
+    this.wandererFallbackObjects = [];
+    this.wandererFallbackOpen = false;
+  }
+
+  private switchToArmedWanderer(): void {
+    const weaponId = getBestWeaponId();
+    if (!weaponId) {
+      this.endBattle(false);
+      return;
+    }
+
+    this.syncActivePartyHp();
+    this.partyInstanceIndex = -1;
+    this.usingArmedWanderer = true;
+    this.forcedSwitch = false;
+    this.player = this.combatantFromWanderer(buildArmedWanderer(weaponId));
+    this.hideWandererFallbackMenu();
+    this.refreshHp();
+    this.log(`${this.player.name} steps up to fight!`);
+    this.buildActionButtons();
+    this.waitingForPlayer = true;
+  }
+
   private switchToPartyIndex(index: number): void {
     const creature = playerParty.creatures[index];
     if (
@@ -373,6 +484,14 @@ export class BattleScene extends Phaser.Scene {
         this.showSwitchMenu();
         return;
       }
+      if (!this.usingArmedWanderer && hasCraftedWeapon()) {
+        this.forcedSwitch = true;
+        this.waitingForPlayer = true;
+        this.log(`${this.player.name} fainted!`);
+        this.buildActionButtons();
+        this.showWandererFallbackMenu();
+        return;
+      }
       this.endBattle(false);
       return;
     }
@@ -424,6 +543,7 @@ export class BattleScene extends Phaser.Scene {
   private endBattle(playerWon: boolean): void {
     this.waitingForPlayer = false;
     this.hideSwitchMenu();
+    this.hideWandererFallbackMenu();
     this.syncActivePartyHp();
 
     if (playerWon) {
