@@ -43,7 +43,8 @@ import {
 
 const FLOOR_LAYER = 0;
 const PROP_LAYER = 0.45;
-const PLAYER_LAYER = 0.5;
+/** Fixed depth above all tiles, walls, and props. */
+const PLAYER_DEPTH = 20_000;
 const HUD_GAP = 8;
 const SCREEN_MARGIN = 12;
 const MOVE_SPEED = 6;
@@ -516,9 +517,7 @@ export class IsometricScene extends Phaser.Scene {
       screen.x,
       screen.y + TILE_HEIGHT / 2 - 2,
     );
-    this.player.setDepth(
-      depthForGridCell(this.playerGridX, this.playerGridY, PLAYER_LAYER),
-    );
+    this.player.setDepth(PLAYER_DEPTH);
   }
 
   private updateQuestToast(): void {
