@@ -40,6 +40,11 @@ import {
   getZoneProps,
   propTextureKey,
 } from "../world/zoneProps";
+import { findGatherPropNearPlayer } from "../world/gatherNodes";
+import {
+  getGatherCooldownRemainingMs,
+  tryHarvestNode,
+} from "../world/gatherState";
 
 const FLOOR_LAYER = 0;
 const PROP_LAYER = 0.45;
@@ -73,6 +78,7 @@ export class IsometricScene extends Phaser.Scene {
   private inEncounter = false;
   private inShrine = false;
   private shrinePrompt?: Phaser.GameObjects.Text;
+  private gatherToast?: Phaser.GameObjects.Text;
   private questToast?: Phaser.GameObjects.Text;
   private worldOrigin = { x: 0, y: 0 };
   private onWindowResize = () => this.onResize();
@@ -145,10 +151,12 @@ export class IsometricScene extends Phaser.Scene {
     this.updateQuestToast();
 
     if (Phaser.Input.Keyboard.JustDown(this.interactKey)) {
-      this.tryShrineInteract();
+      if (!this.tryShrineInteract()) {
+        this.tryGatherInteract();
+      }
     }
 
-    this.updateShrinePrompt();
+    this.updateInteractPrompt();
 
     let dx = 0;
     let dy = 0;
@@ -274,7 +282,7 @@ export class IsometricScene extends Phaser.Scene {
     this.cameras.main.startFollow(this.player, true, 0.12, 0.12);
     this.time.delayedCall(0, () => {
       this.layoutPlayfield(zone);
-      this.updateShrinePrompt();
+      this.updateInteractPrompt();
       updateHostPosition(
         this.currentZoneId,
         this.playerGridX,
@@ -382,7 +390,7 @@ export class IsometricScene extends Phaser.Scene {
       return;
     }
     this.layoutPlayfield(getZone(this.currentZoneId));
-    this.updateShrinePrompt();
+    this.updateInteractPrompt();
   }
 
   private drawZoneTiles(zone: ZoneDefinition): void {
@@ -477,29 +485,67 @@ export class IsometricScene extends Phaser.Scene {
     );
   }
 
-  private updateShrinePrompt(): void {
-    const show = this.isOnShrineTile();
-    if (show && !this.shrinePrompt) {
-      this.shrinePrompt = this.add
-        .text(this.scale.width / 2, this.scale.height - 48, "Press E — Moon Shrine", {
-          color: "#e8dff8",
-          backgroundColor: "#2a2440cc",
-          fontFamily: "system-ui, sans-serif",
-          fontSize: "15px",
-          padding: { x: 12, y: 6 },
-        })
-        .setOrigin(0.5)
-        .setScrollFactor(0)
-        .setDepth(10_001);
-    } else if (!show && this.shrinePrompt) {
-      this.shrinePrompt.destroy();
-      this.shrinePrompt = undefined;
+  private updateInteractPrompt(): void {
+    const shrine = this.isOnShrineTile();
+    const gather =
+      !shrine && !isVisitorMode() ? this.getNearbyGatherProp() : undefined;
+    const show = shrine || gather !== undefined;
+
+    if (!show) {
+      if (this.shrinePrompt) {
+        this.shrinePrompt.destroy();
+        this.shrinePrompt = undefined;
+      }
+      return;
     }
+
+    const label = shrine
+      ? "Press E — Moon Shrine"
+      : this.formatGatherPrompt(gather!);
+
+    if (this.shrinePrompt) {
+      this.shrinePrompt.setText(label);
+      return;
+    }
+
+    this.shrinePrompt = this.add
+      .text(this.scale.width / 2, this.scale.height - 48, label, {
+        color: "#e8dff8",
+        backgroundColor: "#2a2440cc",
+        fontFamily: "system-ui, sans-serif",
+        fontSize: "15px",
+        padding: { x: 12, y: 6 },
+      })
+      .setOrigin(0.5)
+      .setScrollFactor(0)
+      .setDepth(10_001);
   }
 
-  private tryShrineInteract(): void {
+  private getNearbyGatherProp() {
+    const tileX = Math.round(this.playerGridX);
+    const tileY = Math.round(this.playerGridY);
+    return findGatherPropNearPlayer(this.currentZoneId, tileX, tileY);
+  }
+
+  private formatGatherPrompt(
+    prop: NonNullable<ReturnType<typeof findGatherPropNearPlayer>>,
+  ): string {
+    const remaining = getGatherCooldownRemainingMs(
+      this.currentZoneId,
+      prop.x,
+      prop.y,
+      prop.action,
+    );
+    if (remaining > 0) {
+      const seconds = Math.ceil(remaining / 1000);
+      return `Regrowing (${seconds}s)`;
+    }
+    return `Press E — ${prop.action.prompt}`;
+  }
+
+  private tryShrineInteract(): boolean {
     if (!this.isOnShrineTile()) {
-      return;
+      return false;
     }
     this.inShrine = true;
     if (this.shrinePrompt) {
@@ -508,6 +554,49 @@ export class IsometricScene extends Phaser.Scene {
     }
     this.scene.pause();
     this.scene.launch("ShrineScene");
+    return true;
+  }
+
+  private tryGatherInteract(): void {
+    if (isVisitorMode()) {
+      return;
+    }
+
+    const prop = this.getNearbyGatherProp();
+    if (!prop) {
+      return;
+    }
+
+    const result = tryHarvestNode(
+      this.currentZoneId,
+      prop.x,
+      prop.y,
+      prop.action,
+    );
+    updateStatusPanel(getZone(this.currentZoneId));
+    this.showGatherToast(result.message, result.ok);
+    this.updateInteractPrompt();
+  }
+
+  private showGatherToast(message: string, ok: boolean): void {
+    this.gatherToast?.destroy();
+    this.gatherToast = this.add
+      .text(this.scale.width / 2, 120, message, {
+        color: ok ? "#d8f0c0" : "#f0d0c0",
+        backgroundColor: "#2a2a3e",
+        fontFamily: "system-ui, sans-serif",
+        fontSize: "15px",
+        padding: { x: 12, y: 8 },
+        align: "center",
+      })
+      .setOrigin(0.5, 0)
+      .setScrollFactor(0)
+      .setDepth(10_001);
+
+    this.time.delayedCall(1800, () => {
+      this.gatherToast?.destroy();
+      this.gatherToast = undefined;
+    });
   }
 
   private syncPlayerToGrid(): void {

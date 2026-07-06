@@ -21,6 +21,7 @@ const WORLD_TEXTURE_KEYS = [
   "prop-fern",
   "prop-shrine-altar",
   "prop-standing-stone",
+  "prop-pebble-pile",
   "prop-hearth",
   "prop-cottage",
   "prop-gate",
@@ -181,6 +182,18 @@ function generatePropTextures(scene: Phaser.Scene): void {
     g.fillStyle(0x7a7090, 1);
     g.fillRect(16, 10, 10, 24);
     g.generateTexture("prop-standing-stone", 42, 38);
+    g.destroy();
+  }
+
+  if (!scene.textures.exists("prop-pebble-pile")) {
+    const g = scene.make.graphics({ x: 0, y: 0 });
+    g.fillStyle(0x8a8898, 1);
+    g.fillCircle(14, 24, 5);
+    g.fillCircle(22, 26, 4);
+    g.fillCircle(30, 23, 5);
+    g.fillCircle(18, 20, 3);
+    g.fillCircle(26, 18, 4);
+    g.generateTexture("prop-pebble-pile", 44, 32);
     g.destroy();
   }
 
