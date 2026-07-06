@@ -8,12 +8,12 @@ export function createGame(parent: string): Phaser.Game {
   return new Phaser.Game({
     type: Phaser.AUTO,
     parent,
-    width: window.innerWidth,
-    height: window.innerHeight,
+    width: 640,
+    height: 640,
     backgroundColor: "#1a1a2e",
     scene: [IsometricScene, EncounterScene, BattleScene, ShrineScene],
     scale: {
-      mode: Phaser.Scale.RESIZE,
+      mode: Phaser.Scale.FIT,
       autoCenter: Phaser.Scale.CENTER_BOTH,
     },
   });

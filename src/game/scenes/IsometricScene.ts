@@ -10,19 +10,21 @@ import {
   getBoundaryTextureKey,
   getFloorTextureKey,
 } from "../render/worldTextures";
-import { getPartySummary } from "../creatures/party";
-import { getInventorySummary } from "../inventory/playerInventory";
 import { rollWildCreature } from "../encounters/tables";
 import {
   consumeQuestToast,
-  getGateStatusText,
-  getQuestSummary,
   recordQuestEvent,
 } from "../story/questProgress";
+import {
+  measureStatusPanelHeight,
+  resetInviteStatus,
+  setInviteStatus,
+  updateStatusPanel,
+} from "../ui/statusPanel";
 import { canOccupy } from "../world/collision";
 import { copyInviteLink } from "../world/invite";
 import { takePendingWorldPosition } from "../world/worldSnapshot";
-import { getHostLabel, isVisitorMode } from "../world/worldSession";
+import { isVisitorMode } from "../world/worldSession";
 import {
   STARTING_ZONE_ID,
   getZone,
@@ -37,6 +39,8 @@ import {
 const FLOOR_LAYER = 0;
 const PROP_LAYER = 0.45;
 const PLAYER_LAYER = 0.5;
+const HUD_GAP = 8;
+const SCREEN_MARGIN = 12;
 const MOVE_SPEED = 6;
 const ENCOUNTER_TRAVEL_THRESHOLD = 0.75;
 const ENCOUNTER_CHANCE = 0.10;
@@ -64,7 +68,6 @@ export class IsometricScene extends Phaser.Scene {
   private inShrine = false;
   private shrinePrompt?: Phaser.GameObjects.Text;
   private questToast?: Phaser.GameObjects.Text;
-  private inviteStatus?: Phaser.GameObjects.Text;
   private worldOrigin = { x: 0, y: 0 };
 
   constructor() {
@@ -110,6 +113,7 @@ export class IsometricScene extends Phaser.Scene {
     });
 
     this.scale.on("resize", () => this.onResize());
+    window.addEventListener("resize", () => this.onResize());
   }
 
   update(_time: number, delta: number): void {
@@ -244,15 +248,68 @@ export class IsometricScene extends Phaser.Scene {
     this.drawZoneTiles(zone);
     this.drawProps(zone);
     recordQuestEvent({ type: "enter_zone", zoneId });
-    this.renderHud(zone);
 
     this.player = this.add
       .image(0, 0, `player-${this.playerFacing}`)
       .setOrigin(0.5, 1);
     this.syncPlayerToGrid();
-    this.configureCamera(zone);
     this.cameras.main.startFollow(this.player, true, 0.12, 0.12);
-    this.updateShrinePrompt();
+    this.time.delayedCall(0, () => {
+      this.layoutPlayfield(zone);
+      this.updateShrinePrompt();
+    });
+  }
+
+  private getZoneWorldBounds(zone: ZoneDefinition): {
+    minX: number;
+    minY: number;
+    maxX: number;
+    maxY: number;
+    width: number;
+    height: number;
+  } {
+    const minX = this.worldOrigin.x - 80;
+    const minY = this.worldOrigin.y - 80;
+    const maxX = this.worldOrigin.x + zone.width * TILE_WIDTH + 80;
+    const maxY = this.worldOrigin.y + zone.height * TILE_HEIGHT + 80;
+    return {
+      minX,
+      minY,
+      maxX,
+      maxY,
+      width: maxX - minX,
+      height: maxY - minY,
+    };
+  }
+
+  private layoutPlayfield(zone: ZoneDefinition): void {
+    updateStatusPanel(zone);
+
+    const bounds = this.getZoneWorldBounds(zone);
+    const viewportW = window.innerWidth - SCREEN_MARGIN * 2;
+    const viewportH = window.innerHeight - SCREEN_MARGIN * 2;
+    const statusHeight = measureStatusPanelHeight();
+    const boardDisplaySize = Math.max(
+      1,
+      Math.floor(Math.min(viewportW, viewportH - HUD_GAP - statusHeight)),
+    );
+
+    const playfield = document.getElementById("playfield");
+    const gameEl = document.getElementById("game");
+    if (playfield) {
+      playfield.style.width = `${boardDisplaySize}px`;
+    }
+    if (gameEl) {
+      gameEl.style.height = `${boardDisplaySize}px`;
+    }
+
+    const cam = this.cameras.main;
+    cam.setBounds(bounds.minX, bounds.minY, bounds.width, bounds.height);
+    const zoom = Math.min(
+      this.scale.width / bounds.width,
+      this.scale.height / bounds.height,
+    );
+    cam.setZoom(Phaser.Math.Clamp(zoom, 0.85, 2.8));
   }
 
   private getZoneWorldOrigin(_zone: ZoneDefinition): { x: number; y: number } {
@@ -271,25 +328,12 @@ export class IsometricScene extends Phaser.Scene {
     );
   }
 
-  private configureCamera(zone: ZoneDefinition): void {
-    const minX = this.worldOrigin.x - 80;
-    const minY = this.worldOrigin.y - 80;
-    const maxX = this.worldOrigin.x + zone.width * TILE_WIDTH + 80;
-    const maxY = this.worldOrigin.y + zone.height * TILE_HEIGHT + 80;
-    const worldW = maxX - minX;
-    const worldH = maxY - minY;
-
-    this.cameras.main.setBounds(minX, minY, worldW, worldH);
-
-    const zoomX = (this.scale.width * 0.94) / worldW;
-    const zoomY = (this.scale.height * 0.9) / worldH;
-    const zoom = Phaser.Math.Clamp(Math.min(zoomX, zoomY), 0.85, 2.8);
-    this.cameras.main.setZoom(zoom);
-  }
-
   private onResize(): void {
-    const zone = getZone(this.currentZoneId);
-    this.configureCamera(zone);
+    if (!this.player) {
+      return;
+    }
+    this.layoutPlayfield(getZone(this.currentZoneId));
+    this.updateShrinePrompt();
   }
 
   private drawZoneTiles(zone: ZoneDefinition): void {
@@ -429,82 +473,13 @@ export class IsometricScene extends Phaser.Scene {
     );
   }
 
-  private renderHud(zone: ZoneDefinition): void {
-    const sessionLabel = isVisitorMode()
-      ? `Visiting: ${getHostLabel()}`
-      : zone.name;
-
-    this.add
-      .text(16, 16, sessionLabel, {
-        color: "#f0e6d2",
-        fontFamily: "system-ui, sans-serif",
-        fontSize: "18px",
-      })
-      .setScrollFactor(0)
-      .setDepth(10_000);
-
-    this.add
-      .text(16, 42, getQuestSummary(), {
-        color: "#e8d8a0",
-        fontFamily: "system-ui, sans-serif",
-        fontSize: "14px",
-      })
-      .setScrollFactor(0)
-      .setDepth(10_000);
-
-    this.add
-      .text(16, 64, getGateStatusText(), {
-        color: "#c8b8a0",
-        fontFamily: "system-ui, sans-serif",
-        fontSize: "14px",
-      })
-      .setScrollFactor(0)
-      .setDepth(10_000);
-
-    this.add
-      .text(16, 86, getPartySummary(), {
-        color: "#d8e8c0",
-        fontFamily: "system-ui, sans-serif",
-        fontSize: "14px",
-      })
-      .setScrollFactor(0)
-      .setDepth(10_000);
-
-    this.add
-      .text(16, 108, getInventorySummary(), {
-        color: "#c8b8e8",
-        fontFamily: "system-ui, sans-serif",
-        fontSize: "13px",
-      })
-      .setScrollFactor(0)
-      .setDepth(10_000);
-
-    if (!isVisitorMode()) {
-      this.inviteStatus = this.add
-        .text(16, 130, "Press I to copy invite link", {
-          color: "#a8c8e8",
-          fontFamily: "system-ui, sans-serif",
-          fontSize: "12px",
-        })
-        .setScrollFactor(0)
-        .setDepth(10_000);
-    } else {
-      this.inviteStatus = this.add
-        .text(16, 130, "Visitor mode — explore only", {
-          color: "#a8a8c8",
-          fontFamily: "system-ui, sans-serif",
-          fontSize: "12px",
-        })
-        .setScrollFactor(0)
-        .setDepth(10_000);
-    }
-  }
-
   private updateQuestToast(): void {
     const message = consumeQuestToast();
     if (!message) {
       return;
     }
+
+    updateStatusPanel(getZone(this.currentZoneId));
 
     this.questToast?.destroy();
     this.questToast = this.add
@@ -540,24 +515,16 @@ export class IsometricScene extends Phaser.Scene {
         this.playerGridY,
       );
       if (hasClipboard) {
-        this.inviteStatus?.setText("Invite link copied!");
-        this.inviteStatus?.setColor("#d8f0c0");
+        setInviteStatus("Invite link copied!", "#d8f0c0");
       } else {
-        this.inviteStatus?.setText(`Invite ready (copy from console)`);
+        setInviteStatus("Invite ready (copy from console)", "#d8f0c0");
         console.info("Poke invite link:", url);
       }
-      this.time.delayedCall(2500, () => {
-        this.inviteStatus?.setText("Press I to copy invite link");
-        this.inviteStatus?.setColor("#a8c8e8");
-      });
+      this.time.delayedCall(2500, () => resetInviteStatus());
     } catch (error) {
       console.error(error);
-      this.inviteStatus?.setText("Failed to copy invite");
-      this.inviteStatus?.setColor("#f08080");
-      this.time.delayedCall(2500, () => {
-        this.inviteStatus?.setText("Press I to copy invite link");
-        this.inviteStatus?.setColor("#a8c8e8");
-      });
+      setInviteStatus("Failed to copy invite", "#f08080");
+      this.time.delayedCall(2500, () => resetInviteStatus());
     }
   }
 }
