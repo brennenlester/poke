@@ -6,6 +6,7 @@ import {
   playerParty,
 } from "../creatures/party";
 import { ensureCreatureTextures } from "../creatures/sprites";
+import { resolveCreaturePoseTexture } from "../creatures/creaturePoses";
 import {
   BATTLE_CREATURE_DISPLAY,
   BATTLE_PLAYER_DISPLAY,
@@ -131,7 +132,15 @@ export class BattleScene extends Phaser.Scene {
 
     this.wildSprite = fitDisplay(
       this.add
-        .image(cx + 116, 142, getCreatureDefinition(this.wildCreatureId).spriteKey)
+        .image(
+          cx + 116,
+          142,
+          resolveCreaturePoseTexture(
+            this,
+            getCreatureDefinition(this.wildCreatureId).spriteKey,
+            "battle",
+          ),
+        )
         .setDepth(2),
       BATTLE_CREATURE_DISPLAY,
     );
@@ -217,9 +226,10 @@ export class BattleScene extends Phaser.Scene {
     if (this.partyInstanceIndex < 0) {
       return "player-south-0";
     }
-    return getCreatureDefinition(
+    const spriteKey = getCreatureDefinition(
       playerParty.creatures[this.partyInstanceIndex].definitionId,
     ).spriteKey;
+    return resolveCreaturePoseTexture(this, spriteKey, "battle");
   }
 
   private getPlayerBattleDisplay(): {
