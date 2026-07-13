@@ -470,11 +470,30 @@ export class IsometricScene extends Phaser.Scene {
     const w = this.scale.width;
     const h = this.scale.height;
     const g = this.add.graphics().setScrollFactor(0).setDepth(50_000);
-    g.fillStyle(0x120e1a, 0.26);
-    g.fillRect(0, 0, w, 32);
-    g.fillRect(0, h - 32, w, 32);
-    g.fillRect(0, 0, 32, h);
-    g.fillRect(w - 32, 0, 32, h);
+
+    // Soft feathered rings — each pixel painted once (no corner stacking).
+    const ring = 5;
+    const steps = 6;
+    for (let i = 0; i < steps; i++) {
+      const inset = i * ring;
+      const alpha = 0.09 * (1 - i / steps);
+      const thickness = ring;
+      g.fillStyle(0x120e1a, alpha);
+      g.fillRect(inset, inset, w - inset * 2, thickness);
+      g.fillRect(inset, h - inset - thickness, w - inset * 2, thickness);
+      g.fillRect(
+        inset,
+        inset + thickness,
+        thickness,
+        h - inset * 2 - thickness * 2,
+      );
+      g.fillRect(
+        w - inset - thickness,
+        inset + thickness,
+        thickness,
+        h - inset * 2 - thickness * 2,
+      );
+    }
   }
 
   private drawWalls(zone: ZoneDefinition): void {
