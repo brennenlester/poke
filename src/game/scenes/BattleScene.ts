@@ -6,6 +6,12 @@ import {
   playerParty,
 } from "../creatures/party";
 import { ensureCreatureTextures } from "../creatures/sprites";
+import {
+  BATTLE_CREATURE_DISPLAY,
+  BATTLE_PLAYER_DISPLAY,
+  fitDisplay,
+} from "../render/displaySizes";
+import { bindOverlayPixelRatio, DESIGN_SIZE } from "../render/pixelRatio";
 import { ensurePlayerAnims } from "../render/playerAnims";
 import type { BattleCombatant, MoveDefinition } from "../creatures/types";
 import {
@@ -106,13 +112,14 @@ export class BattleScene extends Phaser.Scene {
 
   create(): void {
     this.scene.bringToTop();
+    bindOverlayPixelRatio(this);
     ensureCreatureTextures(this);
     ensurePlayerAnims(this);
     this.cameras.main.fadeIn(140, 255, 255, 255);
 
     this.drawArena();
 
-    const cx = this.scale.width / 2;
+    const cx = DESIGN_SIZE / 2;
 
     this.add
       .text(cx, 40, "Training Spar", {
@@ -122,14 +129,16 @@ export class BattleScene extends Phaser.Scene {
       })
       .setOrigin(0.5);
 
-    this.wildSprite = this.add
-      .image(cx + 116, 142, getCreatureDefinition(this.wildCreatureId).spriteKey)
-      .setScale(1.8)
-      .setDepth(2);
-    this.playerSprite = this.add
-      .image(cx - 118, 238, this.getPlayerSpriteKey())
-      .setScale(1.8)
-      .setDepth(2);
+    this.wildSprite = fitDisplay(
+      this.add
+        .image(cx + 116, 142, getCreatureDefinition(this.wildCreatureId).spriteKey)
+        .setDepth(2),
+      BATTLE_CREATURE_DISPLAY,
+    );
+    this.playerSprite = fitDisplay(
+      this.add.image(cx - 118, 238, this.getPlayerSpriteKey()).setDepth(2),
+      this.getPlayerBattleDisplay(),
+    );
 
     this.wildHpText = this.add.text(cx + 18, 72, "", {
       color: "#f0e6d2",
@@ -161,8 +170,8 @@ export class BattleScene extends Phaser.Scene {
   }
 
   private drawArena(): void {
-    const w = this.scale.width;
-    const h = this.scale.height;
+    const w = DESIGN_SIZE;
+    const h = DESIGN_SIZE;
     const g = this.add.graphics().setDepth(-10);
     g.fillStyle(0x5da9c8, 1);
     g.fillRect(0, 0, w, h);
@@ -189,6 +198,15 @@ export class BattleScene extends Phaser.Scene {
     return getCreatureDefinition(
       playerParty.creatures[this.partyInstanceIndex].definitionId,
     ).spriteKey;
+  }
+
+  private getPlayerBattleDisplay(): {
+    width: number;
+    height: number;
+  } {
+    return this.partyInstanceIndex < 0
+      ? BATTLE_PLAYER_DISPLAY
+      : BATTLE_CREATURE_DISPLAY;
   }
 
   private combatantFromPartyIndex(index: number): BattleCombatant {
@@ -237,7 +255,7 @@ export class BattleScene extends Phaser.Scene {
     this.hideSwitchMenu();
     this.hideWandererFallbackMenu();
 
-    const cx = this.scale.width / 2;
+    const cx = DESIGN_SIZE / 2;
     let buttonY = 320;
 
     if (!this.forcedSwitch) {
@@ -298,8 +316,8 @@ export class BattleScene extends Phaser.Scene {
     }
 
     this.switchMenuOpen = true;
-    const cx = this.scale.width / 2;
-    const panelY = this.scale.height / 2;
+    const cx = DESIGN_SIZE / 2;
+    const panelY = DESIGN_SIZE / 2;
 
     const panel = this.add
       .rectangle(cx, panelY, 320, 220, 0xfff8ec, 0.98)
@@ -382,8 +400,8 @@ export class BattleScene extends Phaser.Scene {
     }
 
     this.wandererFallbackOpen = true;
-    const cx = this.scale.width / 2;
-    const panelY = this.scale.height / 2;
+    const cx = DESIGN_SIZE / 2;
+    const panelY = DESIGN_SIZE / 2;
     const weaponId = getBestWeaponId();
     const armed = weaponId ? buildArmedWanderer(weaponId) : undefined;
 
@@ -471,6 +489,7 @@ export class BattleScene extends Phaser.Scene {
     this.hideWandererFallbackMenu();
     this.refreshHp();
     this.playerSprite.setTexture(this.getPlayerSpriteKey());
+    fitDisplay(this.playerSprite, this.getPlayerBattleDisplay());
     this.log(`${this.player.name} steps up to fight!`);
     this.buildActionButtons();
     this.waitingForPlayer = true;
@@ -494,6 +513,7 @@ export class BattleScene extends Phaser.Scene {
     this.hideSwitchMenu();
     this.refreshHp();
     this.playerSprite.setTexture(this.getPlayerSpriteKey());
+    fitDisplay(this.playerSprite, this.getPlayerBattleDisplay());
     this.log(`Go, ${this.player.name}!`);
     this.buildActionButtons();
 

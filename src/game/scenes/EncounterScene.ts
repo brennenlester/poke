@@ -2,6 +2,11 @@ import Phaser from "phaser";
 import { getCreatureDefinition } from "../creatures/catalog";
 import { addToParty, hasCreature } from "../creatures/party";
 import { ensureCreatureTextures } from "../creatures/sprites";
+import {
+  ENCOUNTER_CREATURE_DISPLAY,
+  fitDisplay,
+} from "../render/displaySizes";
+import { bindOverlayPixelRatio, DESIGN_SIZE } from "../render/pixelRatio";
 import { UNARMED_WANDERER } from "../battle/wandererWeapons";
 import { isVisitorMode } from "../world/worldSession";
 
@@ -27,18 +32,19 @@ export class EncounterScene extends Phaser.Scene {
   }
 
   create(): void {
+    bindOverlayPixelRatio(this);
     ensureCreatureTextures(this);
     const def = getCreatureDefinition(this.creatureId);
 
     this.cameras.main.fadeIn(160, 255, 255, 255);
 
     this.add
-      .rectangle(0, 0, this.scale.width, this.scale.height, 0x1a3048, 0.55)
+      .rectangle(0, 0, DESIGN_SIZE, DESIGN_SIZE, 0x1a3048, 0.55)
       .setOrigin(0)
       .setInteractive();
 
-    const panelX = this.scale.width / 2;
-    const panelY = this.scale.height / 2;
+    const panelX = DESIGN_SIZE / 2;
+    const panelY = DESIGN_SIZE / 2;
     const panelLeft = panelX - PANEL_WIDTH / 2;
     const innerLeft = panelLeft + PANEL_PADDING;
     const innerWidth = PANEL_WIDTH - PANEL_PADDING * 2;
@@ -69,10 +75,10 @@ export class EncounterScene extends Phaser.Scene {
       18,
     );
 
-    this.add
-      .image(panelX, panelY - 78, def.spriteKey)
-      .setScale(2.1)
-      .setOrigin(0.5);
+    fitDisplay(
+      this.add.image(panelX, panelY - 92, def.spriteKey).setOrigin(0.5),
+      ENCOUNTER_CREATURE_DISPLAY,
+    );
 
     this.addPanelText(
       panelX,
@@ -180,8 +186,8 @@ export class EncounterScene extends Phaser.Scene {
 
   private showResult(message: string): void {
     const text = this.addPanelText(
-      this.scale.width / 2,
-      this.scale.height / 2 + 128,
+      DESIGN_SIZE / 2,
+      DESIGN_SIZE / 2 + 128,
       message,
       PANEL_WIDTH - PANEL_PADDING * 2,
       {

@@ -10,7 +10,16 @@ import {
   getBoundaryTextureKey,
   getFloorTextureKey,
 } from "../render/worldTextures";
-import { ensurePlayerAnims } from "../render/playerAnims";
+import {
+  PROP_DISPLAY,
+  fitDisplay,
+} from "../render/displaySizes";
+import {
+  placeWorldHudText,
+  RENDER_DPR,
+  resizeGameForDisplay,
+} from "../render/pixelRatio";
+import { ensurePlayerAnims, bindPlayerDisplaySize } from "../render/playerAnims";
 import { rollWildCreature } from "../encounters/tables";
 import {
   consumeQuestToast,
@@ -92,6 +101,7 @@ export class IsometricScene extends Phaser.Scene {
   private layoutLocked = false;
   private isMoving = false;
   private playerBaseY = 0;
+  private walkPhase = 0;
 
   constructor() {
     super({ key: "IsometricScene" });
@@ -168,6 +178,7 @@ export class IsometricScene extends Phaser.Scene {
     }
 
     this.updateInteractPrompt();
+    this.layoutWorldHudTexts();
 
     let dx = 0;
     let dy = 0;
@@ -187,11 +198,14 @@ export class IsometricScene extends Phaser.Scene {
 
     if (dx === 0 && dy === 0) {
       this.isMoving = false;
+      this.walkPhase = 0;
       this.playPlayerAnimation();
+      this.syncPlayerToGrid();
       return;
     }
 
     this.isMoving = true;
+    this.walkPhase += delta;
     this.updateFacing(dx, dy);
     this.playPlayerAnimation();
 
@@ -207,7 +221,6 @@ export class IsometricScene extends Phaser.Scene {
     if (canOccupy(zone, nextX, nextY)) {
       this.playerGridX = nextX;
       this.playerGridY = nextY;
-      this.syncPlayerToGrid();
       updateHostPosition(
         this.currentZoneId,
         this.playerGridX,
@@ -216,6 +229,7 @@ export class IsometricScene extends Phaser.Scene {
       this.tryZoneTransition(zone);
       this.tryRandomEncounter(step);
     }
+    this.syncPlayerToGrid();
   }
 
   private updateFacing(dx: number, dy: number): void {
@@ -298,6 +312,7 @@ export class IsometricScene extends Phaser.Scene {
     this.player = this.add
       .sprite(0, 0, `player-${this.playerFacing}-0`)
       .setOrigin(0.5, 1);
+    bindPlayerDisplaySize(this.player);
     this.syncPlayerToGrid();
     this.playPlayerAnimation();
     this.cameras.main.startFollow(this.player, true, 0.08, 0.08);
@@ -377,6 +392,7 @@ export class IsometricScene extends Phaser.Scene {
       gameEl.style.height = `${boardDisplaySize}px`;
     }
     updateStatusPanel(zone);
+    resizeGameForDisplay(this, boardDisplaySize);
     this.scale.refresh();
 
     const cam = this.cameras.main;
@@ -385,9 +401,24 @@ export class IsometricScene extends Phaser.Scene {
       this.scale.width / bounds.width,
       this.scale.height / bounds.height,
     );
-    cam.setZoom(Phaser.Math.Clamp(zoom, 0.85, 2.8));
+    // Allow zoom to scale with HiDPI buffer so the world still fills the view.
+    // No lower clamp: small boards must still fit the full zone after HiDPI resize.
+    cam.setZoom(Phaser.Math.Clamp(zoom, 0.01, 2.8 * RENDER_DPR));
+    this.layoutWorldHudTexts();
     } finally {
       this.layoutLocked = false;
+    }
+  }
+
+  private layoutWorldHudTexts(): void {
+    if (this.shrinePrompt) {
+      placeWorldHudText(this, this.shrinePrompt, "bottom", 48);
+    }
+    if (this.gatherToast) {
+      placeWorldHudText(this, this.gatherToast, "top", 120);
+    }
+    if (this.questToast) {
+      placeWorldHudText(this, this.questToast, "top", 120);
     }
   }
 
@@ -510,6 +541,10 @@ export class IsometricScene extends Phaser.Scene {
       const propSprite = this.add
         .image(screen.x, screen.y + TILE_HEIGHT / 2 - 2, key)
         .setOrigin(0.5, 1);
+      const propSize = PROP_DISPLAY[key];
+      if (propSize) {
+        fitDisplay(propSprite, propSize);
+      }
       propSprite.setDepth(depthForGridCell(prop.x, prop.y, PROP_LAYER));
     }
   }
@@ -546,11 +581,12 @@ export class IsometricScene extends Phaser.Scene {
 
     if (this.shrinePrompt) {
       this.shrinePrompt.setText(label);
+      placeWorldHudText(this, this.shrinePrompt, "bottom", 48);
       return;
     }
 
     this.shrinePrompt = this.add
-      .text(this.scale.width / 2, this.scale.height - 48, label, {
+      .text(0, 0, label, {
         color: "#1f4050",
         backgroundColor: "#fff8ecdd",
         fontFamily: "Source Sans 3, system-ui, sans-serif",
@@ -559,8 +595,8 @@ export class IsometricScene extends Phaser.Scene {
         padding: { x: 14, y: 8 },
       })
       .setOrigin(0.5)
-      .setScrollFactor(0)
       .setDepth(10_001);
+    placeWorldHudText(this, this.shrinePrompt, "bottom", 48);
   }
 
   private getNearbyGatherProp() {
@@ -648,7 +684,7 @@ export class IsometricScene extends Phaser.Scene {
   private showGatherToast(message: string, ok: boolean): void {
     this.gatherToast?.destroy();
     this.gatherToast = this.add
-      .text(this.scale.width / 2, 120, message, {
+      .text(0, 0, message, {
         color: ok ? "#d8f0c0" : "#f0d0c0",
         backgroundColor: "#2a2a3e",
         fontFamily: "system-ui, sans-serif",
@@ -657,8 +693,8 @@ export class IsometricScene extends Phaser.Scene {
         align: "center",
       })
       .setOrigin(0.5, 0)
-      .setScrollFactor(0)
       .setDepth(10_001);
+    placeWorldHudText(this, this.gatherToast, "top", 120);
 
     this.time.delayedCall(1800, () => {
       this.gatherToast?.destroy();
@@ -670,7 +706,12 @@ export class IsometricScene extends Phaser.Scene {
     const screen = this.toScreen(this.playerGridX, this.playerGridY);
 
     this.playerBaseY = screen.y + TILE_HEIGHT / 2 - 2;
-    this.player.setPosition(screen.x, this.playerBaseY);
+    // Visible stride bob while moving (Imagine walk frames stay design-locked).
+    const bob = this.isMoving
+      ? Math.abs(Math.sin(this.walkPhase / 85)) * 5
+      : 0;
+    const sway = this.isMoving ? Math.sin(this.walkPhase / 85) * 2 : 0;
+    this.player.setPosition(screen.x + sway, this.playerBaseY - bob);
     this.player.setDepth(PLAYER_DEPTH);
   }
 
@@ -694,7 +735,7 @@ export class IsometricScene extends Phaser.Scene {
 
     this.questToast?.destroy();
     this.questToast = this.add
-      .text(this.scale.width / 2, 120, message, {
+      .text(0, 0, message, {
         color: "#f0e6d2",
         backgroundColor: "#2a2a3e",
         fontFamily: "system-ui, sans-serif",
@@ -704,8 +745,8 @@ export class IsometricScene extends Phaser.Scene {
         wordWrap: { width: 360 },
       })
       .setOrigin(0.5, 0)
-      .setScrollFactor(0)
       .setDepth(10_001);
+    placeWorldHudText(this, this.questToast, "top", 120);
 
     this.time.delayedCall(2800, () => {
       this.questToast?.destroy();
