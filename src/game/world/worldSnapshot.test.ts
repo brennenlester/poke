@@ -1,0 +1,112 @@
+import { describe, expect, it } from "vitest";
+import type { CreatureInstance } from "../creatures/types";
+import type { QuestId, QuestStatus } from "../story/questTypes";
+import { QUEST_ORDER } from "../story/quests";
+import {
+  isValidWorldSnapshot,
+  type WorldSnapshot,
+} from "./worldSnapshot";
+
+function questProgress(
+  overrides: Partial<Record<QuestId, QuestStatus>> = {},
+): Record<QuestId, QuestStatus> {
+  const base = Object.fromEntries(
+    QUEST_ORDER.map((id) => [id, "locked" as const]),
+  ) as Record<QuestId, QuestStatus>;
+  return { ...base, "first-befriend": "active", ...overrides };
+}
+
+function partyMember(
+  overrides: Partial<CreatureInstance> = {},
+): CreatureInstance {
+  return {
+    instanceId: "1",
+    definitionId: "mossling",
+    speciesId: "mossling",
+    currentHp: 10,
+    level: 1,
+    xp: 0,
+    ...overrides,
+  };
+}
+
+function validSnapshot(
+  overrides: Partial<WorldSnapshot> = {},
+): WorldSnapshot {
+  return {
+    version: 1,
+    hostLabel: "test-host",
+    overworldUnlocked: false,
+    questProgress: questProgress(),
+    party: [partyMember()],
+    nextInstanceId: 2,
+    materials: {},
+    items: {},
+    position: { zoneId: "grove", x: 5, y: 5 },
+    ...overrides,
+  };
+}
+
+describe("isValidWorldSnapshot", () => {
+  it("accepts a well-formed host snapshot", () => {
+    expect(isValidWorldSnapshot(validSnapshot())).toBe(true);
+  });
+
+  it("rejects unknown zoneId", () => {
+    expect(
+      isValidWorldSnapshot(
+        validSnapshot({
+          position: { zoneId: "nope" as WorldSnapshot["position"]["zoneId"], x: 5, y: 5 },
+        }),
+      ),
+    ).toBe(false);
+  });
+
+  it("rejects unknown creature definitionId", () => {
+    expect(
+      isValidWorldSnapshot(
+        validSnapshot({
+          party: [partyMember({ definitionId: "not-a-creature" })],
+        }),
+      ),
+    ).toBe(false);
+  });
+
+  it("rejects invalid quest status", () => {
+    expect(
+      isValidWorldSnapshot(
+        validSnapshot({
+          questProgress: questProgress({
+            "first-befriend": "nope" as QuestStatus,
+          }),
+        }),
+      ),
+    ).toBe(false);
+  });
+
+  it("rejects non-walkable spawn", () => {
+    expect(
+      isValidWorldSnapshot(
+        validSnapshot({
+          position: { zoneId: "grove", x: 0, y: 0 },
+        }),
+      ),
+    ).toBe(false);
+  });
+
+  it("rejects negative inventory counts", () => {
+    expect(
+      isValidWorldSnapshot(validSnapshot({ materials: { wood: -1 } })),
+    ).toBe(false);
+  });
+
+  it("rejects non-finite party HP", () => {
+    expect(
+      isValidWorldSnapshot(
+        validSnapshot({
+          party: [partyMember({ currentHp: Number.NaN })],
+        }),
+      ),
+    ).toBe(false);
+  });
+});
