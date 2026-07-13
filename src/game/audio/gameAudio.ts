@@ -101,7 +101,7 @@ export function ensureGroveMusic(scene: Phaser.Scene): void {
   if (!unlocked || !scene.cache.audio.exists(MUSIC_GROVE)) {
     return;
   }
-  if (!music || !music.active) {
+  if (!music) {
     music = scene.sound.add(MUSIC_GROVE, {
       loop: true,
       volume: 0.22,
