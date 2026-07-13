@@ -402,7 +402,8 @@ export class IsometricScene extends Phaser.Scene {
       this.scale.height / bounds.height,
     );
     // Allow zoom to scale with HiDPI buffer so the world still fills the view.
-    cam.setZoom(Phaser.Math.Clamp(zoom, 0.85, 2.8 * RENDER_DPR));
+    // No lower clamp: small boards must still fit the full zone after HiDPI resize.
+    cam.setZoom(Phaser.Math.Clamp(zoom, 0.01, 2.8 * RENDER_DPR));
     this.layoutWorldHudTexts();
     } finally {
       this.layoutLocked = false;
