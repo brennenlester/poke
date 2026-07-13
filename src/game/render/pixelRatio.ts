@@ -62,6 +62,9 @@ export function placeWorldHudText(
   anchor: "top" | "bottom",
   inset: number,
 ): void {
+  if (!text.active) {
+    return;
+  }
   const cam = scene.cameras.main;
   const halfH = cam.height / (2 * cam.zoom);
   text.setScrollFactor(1);
