@@ -10,7 +10,7 @@ body,
   width: 100%;
   height: 100%;
   overflow: hidden;
-  background: #b9e4df;
+  background: #d8efe8;
 }
 
 #app {
@@ -43,11 +43,14 @@ body,
 #status-panel {
   flex: 0 0 auto;
   margin-top: 8px;
-  padding: 12px 14px;
-  background: linear-gradient(135deg, #fff8df 0%, #d9f2e6 100%);
-  border: 3px solid #438b82;
+  padding: 14px 16px;
+  background:
+    linear-gradient(160deg, #fff8ec 0%, #eef8f2 62%, #dff3ea 100%);
+  border: 3px solid #6eb8a8;
   border-radius: 18px;
-  box-shadow: inset 0 0 0 2px #ffffff99, 0 6px 16px #39796a55;
+  box-shadow:
+    inset 0 0 0 1px #ffffffaa,
+    0 8px 18px #3a786633;
   font-family: "Source Sans 3", sans-serif;
   overflow: hidden;
 }
@@ -63,7 +66,7 @@ body,
 }
 
 .status-zone {
-  color: #254d5a;
+  color: #2a4858;
   font-family: Fraunces, serif;
   font-size: 18px;
   font-weight: 700;
@@ -71,36 +74,36 @@ body,
 }
 
 .status-quest {
-  color: #356c63;
+  color: #4a6a48;
   font-size: 13px;
   font-weight: 600;
-  border-left: 3px solid #efad57;
+  border-left: 3px solid #7ec878;
   padding-left: 8px;
 }
 
 .status-quest-hint {
-  color: #6b8c7b;
+  color: #6a8070;
   font-size: 12px;
   font-style: italic;
 }
 
 .status-gate {
-  color: #4b796e;
+  color: #5a7888;
   font-size: 13px;
 }
 
 .status-party {
-  color: #2c6577;
+  color: #3a6a58;
   font-size: 13px;
 }
 
 .status-materials {
-  color: #5b4f8c;
+  color: #4a7088;
   font-size: 13px;
 }
 
 .status-session {
-  color: #4d879d;
+  color: #4a88a8;
   font-size: 12px;
 }
 
@@ -111,22 +114,23 @@ body,
 }
 
 .status-reset-btn {
-  border: 2px solid #bd7059;
-  background: #fff0d4;
-  color: #9a493d;
+  border: 2px solid #e0a0a0;
+  background: #fff0f0;
+  color: #a05050;
   font-family: "Source Sans 3", sans-serif;
   font-size: 12px;
-  padding: 6px 12px;
+  font-weight: 600;
+  padding: 7px 14px;
   border-radius: 999px;
   cursor: pointer;
 }
 
 .status-reset-btn:hover {
-  background: #ffe0c4;
-  border-color: #a95547;
+  background: #ffe4e4;
+  border-color: #d08080;
 }
 
 .status-reset-btn:focus-visible {
-  outline: 3px solid #efad57;
+  outline: 2px solid #c8a0a0;
   outline-offset: 2px;
 }
