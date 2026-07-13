@@ -172,6 +172,28 @@ export class BattleScene extends Phaser.Scene {
   private drawArena(): void {
     const w = DESIGN_SIZE;
     const h = DESIGN_SIZE;
+    const hasImagine =
+      this.textures.exists("arena-sky") &&
+      this.textures.exists("arena-hills") &&
+      this.textures.exists("arena-platform");
+
+    if (hasImagine) {
+      this.add
+        .image(w / 2, h / 2, "arena-sky")
+        .setDisplaySize(w, h)
+        .setDepth(-12);
+      this.add
+        .image(w / 2, h / 2, "arena-hills")
+        .setDisplaySize(w, h)
+        .setDepth(-11);
+      this.add
+        .image(w / 2, h / 2, "arena-platform")
+        .setDisplaySize(w, h)
+        .setDepth(-10);
+      return;
+    }
+
+    // Procedural fallback when Imagine arena layers are missing.
     const g = this.add.graphics().setDepth(-10);
     g.fillStyle(0x5da9c8, 1);
     g.fillRect(0, 0, w, h);
