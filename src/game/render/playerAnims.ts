@@ -177,7 +177,8 @@ export function ensurePlayerAnims(scene: Phaser.Scene): void {
     }
     scene.anims.create({
       key: walkKey,
-      frames: [0, 1, 2, 1].map((frame) => ({
+      // Stride uses walk frames only; idle (0) is standing and may share walk1 art.
+      frames: [1, 2, 1, 2].map((frame) => ({
         key: textureKey(facing, frame),
       })),
       frameRate: 8,
