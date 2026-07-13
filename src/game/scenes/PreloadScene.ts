@@ -1,6 +1,9 @@
 import Phaser from "phaser";
 import { preloadGameAudio } from "../audio/gameAudio";
-import { preloadImagineAssets } from "../render/imagineAssets";
+import {
+  preloadImagineAssets,
+  promoteImagineAtlasFrames,
+} from "../render/imagineAssets";
 
 export class PreloadScene extends Phaser.Scene {
   constructor() {
@@ -17,6 +20,7 @@ export class PreloadScene extends Phaser.Scene {
   }
 
   create(): void {
+    promoteImagineAtlasFrames(this);
     this.scene.start("IsometricScene");
   }
 }

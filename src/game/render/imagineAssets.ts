@@ -1,92 +1,63 @@
 import Phaser from "phaser";
-import { CREATURES } from "../creatures/catalog";
 
-const FACINGS = ["south", "north", "east", "west"] as const;
-
-const PROP_KEYS = [
-  "prop-tree",
-  "prop-fern",
-  "prop-shrine-altar",
-  "prop-standing-stone",
-  "prop-pebble-pile",
-  "prop-hearth",
-  "prop-cottage",
-  "prop-gate",
-  "prop-gate-locked",
-] as const;
-
-const ZONE_IDS = [
-  "grove",
-  "shrine",
-  "village",
-  "overworld",
-  "mistwood",
-  "emberfen",
-] as const;
-
-const FLOOR_KEYS = [
-  ...ZONE_IDS.flatMap((zoneId) => [
-    `floor-${zoneId}-light`,
-    `floor-${zoneId}-dark`,
-  ]),
-  "floor-path",
-] as const;
-
-const BOUNDARY_KEYS = ZONE_IDS.map(
-  (zoneId) => `boundary-${zoneId}` as const,
-);
+export const IMAGINE_ATLAS_KEY = "imagine-atlas";
 
 /**
- * Queue Imagine-backed PNGs. Missing files fall through to procedural ensure* helpers.
+ * Queue the packed Imagine atlas (PNG + JSON). Missing individual frames still
+ * fall through to procedural ensure* helpers after promoteAtlasFrames runs.
  *
- * ponytail: only Style D walk1 is loaded as the canonical trainer pose per facing.
+ * ponytail: only Style D walk1 is packed as the canonical trainer pose per facing.
  * Source walk2 art flips held props mid-cycle; stride frames are derived from walk1
  * until matching dual-pose Imagine sheets exist.
  */
 export function preloadImagineAssets(scene: Phaser.Scene): void {
-  for (const facing of FACINGS) {
-    scene.load.image(
-      `player-${facing}-0`,
-      `assets/player/player-${facing}-0.png`,
-    );
+  scene.load.atlas(
+    IMAGINE_ATLAS_KEY,
+    "assets/atlas/imagine.png",
+    "assets/atlas/imagine.json",
+  );
+}
+
+/**
+ * Promote atlas frames to top-level texture keys so existing `spriteKey` /
+ * `player-*-0` / `floor-*` lookups keep working without call-site changes.
+ */
+export function promoteImagineAtlasFrames(scene: Phaser.Scene): void {
+  if (!scene.textures.exists(IMAGINE_ATLAS_KEY)) {
+    return;
   }
 
-  for (const creature of CREATURES) {
-    scene.load.image(
-      creature.spriteKey,
-      `assets/creatures/${creature.spriteKey}.png`,
-    );
-    scene.load.image(
-      `${creature.spriteKey}-idle`,
-      `assets/creatures/${creature.spriteKey}-idle.png`,
-    );
-    scene.load.image(
-      `${creature.spriteKey}-encounter`,
-      `assets/creatures/${creature.spriteKey}-encounter.png`,
-    );
-    scene.load.image(
-      `${creature.spriteKey}-battle`,
-      `assets/creatures/${creature.spriteKey}-battle.png`,
-    );
+  const atlas = scene.textures.get(IMAGINE_ATLAS_KEY);
+  const sourceImage = atlas.getSourceImage() as
+    | HTMLImageElement
+    | HTMLCanvasElement;
+  if (!sourceImage) {
+    return;
   }
 
-  for (const key of PROP_KEYS) {
-    scene.load.image(key, `assets/world/${key}.png`);
-  }
-
-  for (const key of FLOOR_KEYS) {
-    scene.load.image(key, `assets/world/${key}.png`);
-  }
-
-  for (const key of BOUNDARY_KEYS) {
-    scene.load.image(key, `assets/world/${key}.png`);
-  }
-
-  for (const key of [
-    "arena-sky",
-    "arena-hills",
-    "arena-platform",
-  ] as const) {
-    scene.load.image(key, `assets/world/${key}.png`);
+  for (const frameName of atlas.getFrameNames()) {
+    if (frameName === "__BASE" || scene.textures.exists(frameName)) {
+      continue;
+    }
+    const frame = atlas.get(frameName);
+    const canvas = document.createElement("canvas");
+    canvas.width = frame.cutWidth;
+    canvas.height = frame.cutHeight;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) {
+      continue;
+    }
+    ctx.drawImage(
+      sourceImage,
+      frame.cutX,
+      frame.cutY,
+      frame.cutWidth,
+      frame.cutHeight,
+      0,
+      0,
+      frame.cutWidth,
+      frame.cutHeight,
+    );
+    scene.textures.addCanvas(frameName, canvas);
   }
 }
