@@ -67,13 +67,16 @@ export function placeWorldHudText(
   }
   const cam = scene.cameras.main;
   const halfH = cam.height / (2 * cam.zoom);
+  // Cancel camera zoom and compensate HiDPI buffer→CSS downscale so inset/font
+  // stay at logical CSS sizes (inset is CSS px; fontSize is authored for CSS).
   text.setScrollFactor(1);
-  text.setScale(1 / cam.zoom);
+  text.setScale(RENDER_DPR / cam.zoom);
+  const insetWorld = (inset * RENDER_DPR) / cam.zoom;
   text.setPosition(
     cam.midPoint.x,
     anchor === "bottom"
-      ? cam.midPoint.y + halfH - inset / cam.zoom
-      : cam.midPoint.y - halfH + inset / cam.zoom,
+      ? cam.midPoint.y + halfH - insetWorld
+      : cam.midPoint.y - halfH + insetWorld,
   );
 }
 
