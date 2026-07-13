@@ -15,12 +15,16 @@ export const ZONE_ENCOUNTERS: Record<ZoneId, EncounterEntry[]> = {
     { id: "brook-nymph", weight: 60 },
     { id: "mossling", weight: 40 },
   ],
+  // Late-game only — not in grove/shrine/village tables.
   overworld: [
-    { id: "stone-hound", weight: 20 },
-    { id: "mist-serpent", weight: 20 },
-    { id: "rootwalker", weight: 20 },
+    { id: "stone-hound", weight: 35 },
+    { id: "rootwalker", weight: 35 },
+    { id: "lantern-fox", weight: 30 },
+  ],
+  mistwood: [
+    { id: "mist-serpent", weight: 45 },
+    { id: "thunder-finch", weight: 35 },
     { id: "lantern-fox", weight: 20 },
-    { id: "thunder-finch", weight: 20 },
   ],
 };
 

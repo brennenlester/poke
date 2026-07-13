@@ -9,6 +9,7 @@ const ZONE_PALETTES: Record<ZoneId, ZonePalette> = {
   shrine: { light: 0xd9d5ed, dark: 0xa9a8cf, accent: 0xf4e8ff, edge: 0x696a9d },
   village: { light: 0xeec58a, dark: 0xd89a5e, accent: 0xffe2a2, edge: 0xa96a43 },
   overworld: { light: 0x78c8e0, dark: 0x4fa8c8, accent: 0xb8e8f0, edge: 0x387898 },
+  mistwood: { light: 0xb8a8d8, dark: 0x8878b0, accent: 0xe0d4f8, edge: 0x5a4a80 },
 };
 
 const BOUNDARY_HEIGHT = 56;
@@ -79,8 +80,18 @@ function generateFloorTextures(scene: Phaser.Scene, zoneId: ZoneId): void {
       g.fillRoundedRect(10, 34, 12, 3, 1);
       g.fillStyle(0xffe8b8, 0.35);
       g.fillCircle(18, 20, 2);
+    } else if (zoneId === "mistwood") {
+      // Soft violet moss + mist wisps
+      g.fillStyle(0xf0e8ff, 0.4);
+      g.fillEllipse(14, 14, 12, 6);
+      g.fillEllipse(34, 30, 14, 5);
+      g.fillStyle(0x6a5890, 0.5);
+      g.fillTriangle(8, 36, 11, 28, 14, 36);
+      g.fillTriangle(28, 20, 31, 12, 34, 20);
+      g.fillStyle(0xd8c8f0, 0.55);
+      g.fillCircle(22, 22, 2);
     } else {
-      // Bright blue route grass
+      // Bright blue route grass (Folklore Fields)
       g.fillStyle(0xdff7f4, 0.55);
       g.fillCircle(11, 12, 2);
       g.fillCircle(35, 31, 2);
@@ -227,6 +238,29 @@ function generateWallTextures(scene: Phaser.Scene): void {
     g.fillStyle(0x6ed890, 0.7);
     g.fillCircle(18, BOUNDARY_HEIGHT - 20, 3);
     g.fillCircle(40, BOUNDARY_HEIGHT - 24, 3);
+  });
+
+  // Mistwood — violet mist cliffs
+  generateBoundaryTexture(scene, "boundary-mistwood", (g) => {
+    g.fillStyle(0x000000, 0.14);
+    g.fillEllipse(24, BOUNDARY_HEIGHT - 3, 38, 6);
+
+    g.fillStyle(OUTLINE, 1);
+    g.fillRoundedRect(2, BOUNDARY_HEIGHT - 16, 44, 14, 3);
+    g.fillStyle(0x6a5a88, 1);
+    g.fillRoundedRect(3, BOUNDARY_HEIGHT - 15, 42, 12, 2);
+
+    g.fillStyle(0x8878a8, 1);
+    g.fillTriangle(2, BOUNDARY_HEIGHT - 16, 16, BOUNDARY_HEIGHT - 40, 32, BOUNDARY_HEIGHT - 16);
+    g.fillStyle(0xa898c8, 1);
+    g.fillTriangle(16, BOUNDARY_HEIGHT - 16, 32, BOUNDARY_HEIGHT - 48, 46, BOUNDARY_HEIGHT - 16);
+
+    g.fillStyle(0xe8e0f8, 0.55);
+    g.fillEllipse(12, BOUNDARY_HEIGHT - 28, 18, 7);
+    g.fillEllipse(34, BOUNDARY_HEIGHT - 36, 16, 6);
+    g.fillStyle(0xd0c0f0, 0.7);
+    g.fillCircle(20, BOUNDARY_HEIGHT - 22, 3);
+    g.fillCircle(38, BOUNDARY_HEIGHT - 26, 3);
   });
 }
 

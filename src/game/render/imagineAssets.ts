@@ -15,7 +15,7 @@ const PROP_KEYS = [
   "prop-gate-locked",
 ] as const;
 
-const ZONE_IDS = ["grove", "shrine", "village", "overworld"] as const;
+const ZONE_IDS = ["grove", "shrine", "village", "overworld", "mistwood"] as const;
 
 const FLOOR_KEYS = [
   ...ZONE_IDS.flatMap((zoneId) => [
