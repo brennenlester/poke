@@ -40,8 +40,8 @@ export function setAudioMuted(next: boolean, scene?: Phaser.Scene): void {
   }
   if (muted) {
     music?.pause();
-  } else if (music && !music.isPlaying) {
-    music.resume();
+  } else if (scene) {
+    ensureGroveMusic(scene);
   }
   syncMuteButton();
 }
