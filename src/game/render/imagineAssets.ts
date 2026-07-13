@@ -49,6 +49,18 @@ export function preloadImagineAssets(scene: Phaser.Scene): void {
       creature.spriteKey,
       `assets/creatures/${creature.spriteKey}.png`,
     );
+    scene.load.image(
+      `${creature.spriteKey}-idle`,
+      `assets/creatures/${creature.spriteKey}-idle.png`,
+    );
+    scene.load.image(
+      `${creature.spriteKey}-encounter`,
+      `assets/creatures/${creature.spriteKey}-encounter.png`,
+    );
+    scene.load.image(
+      `${creature.spriteKey}-battle`,
+      `assets/creatures/${creature.spriteKey}-battle.png`,
+    );
   }
 
   for (const key of PROP_KEYS) {

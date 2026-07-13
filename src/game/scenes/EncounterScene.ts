@@ -2,6 +2,7 @@ import Phaser from "phaser";
 import { getCreatureDefinition } from "../creatures/catalog";
 import { addToParty, hasCreature } from "../creatures/party";
 import { ensureCreatureTextures } from "../creatures/sprites";
+import { resolveCreaturePoseTexture } from "../creatures/creaturePoses";
 import {
   ENCOUNTER_CREATURE_DISPLAY,
   fitDisplay,
@@ -76,7 +77,13 @@ export class EncounterScene extends Phaser.Scene {
     );
 
     fitDisplay(
-      this.add.image(panelX, panelY - 92, def.spriteKey).setOrigin(0.5),
+      this.add
+        .image(
+          panelX,
+          panelY - 92,
+          resolveCreaturePoseTexture(this, def.spriteKey, "encounter"),
+        )
+        .setOrigin(0.5),
       ENCOUNTER_CREATURE_DISPLAY,
     );
 

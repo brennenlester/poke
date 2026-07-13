@@ -6,6 +6,7 @@ import {
   playerParty,
 } from "../creatures/party";
 import { ensureCreatureTextures } from "../creatures/sprites";
+import { resolveCreaturePoseTexture } from "../creatures/creaturePoses";
 import {
   BATTLE_CREATURE_DISPLAY,
   BATTLE_PLAYER_DISPLAY,
@@ -131,7 +132,15 @@ export class BattleScene extends Phaser.Scene {
 
     this.wildSprite = fitDisplay(
       this.add
-        .image(cx + 116, 142, getCreatureDefinition(this.wildCreatureId).spriteKey)
+        .image(
+          cx + 116,
+          142,
+          resolveCreaturePoseTexture(
+            this,
+            getCreatureDefinition(this.wildCreatureId).spriteKey,
+            "battle",
+          ),
+        )
         .setDepth(2),
       BATTLE_CREATURE_DISPLAY,
     );
@@ -139,6 +148,7 @@ export class BattleScene extends Phaser.Scene {
       this.add.image(cx - 118, 238, this.getPlayerSpriteKey()).setDepth(2),
       this.getPlayerBattleDisplay(),
     );
+    this.syncPlayerBattleFacing();
 
     this.wildHpText = this.add.text(cx + 18, 72, "", {
       color: "#f0e6d2",
@@ -217,9 +227,15 @@ export class BattleScene extends Phaser.Scene {
     if (this.partyInstanceIndex < 0) {
       return "player-south-0";
     }
-    return getCreatureDefinition(
+    const spriteKey = getCreatureDefinition(
       playerParty.creatures[this.partyInstanceIndex].definitionId,
     ).spriteKey;
+    return resolveCreaturePoseTexture(this, spriteKey, "battle");
+  }
+
+  /** Party creatures sit on the left; flip battle crops to face the opponent. */
+  private syncPlayerBattleFacing(): void {
+    this.playerSprite.setFlipX(this.partyInstanceIndex >= 0);
   }
 
   private getPlayerBattleDisplay(): {
@@ -512,6 +528,7 @@ export class BattleScene extends Phaser.Scene {
     this.refreshHp();
     this.playerSprite.setTexture(this.getPlayerSpriteKey());
     fitDisplay(this.playerSprite, this.getPlayerBattleDisplay());
+    this.syncPlayerBattleFacing();
     this.log(`${this.player.name} steps up to fight!`);
     this.buildActionButtons();
     this.waitingForPlayer = true;
@@ -536,6 +553,7 @@ export class BattleScene extends Phaser.Scene {
     this.refreshHp();
     this.playerSprite.setTexture(this.getPlayerSpriteKey());
     fitDisplay(this.playerSprite, this.getPlayerBattleDisplay());
+    this.syncPlayerBattleFacing();
     this.log(`Go, ${this.player.name}!`);
     this.buildActionButtons();
 
