@@ -137,7 +137,7 @@ export class BattleScene extends Phaser.Scene {
     );
     this.playerSprite = fitDisplay(
       this.add.image(cx - 118, 238, this.getPlayerSpriteKey()).setDepth(2),
-      BATTLE_PLAYER_DISPLAY,
+      this.getPlayerBattleDisplay(),
     );
 
     this.wildHpText = this.add.text(cx + 18, 72, "", {
@@ -198,6 +198,15 @@ export class BattleScene extends Phaser.Scene {
     return getCreatureDefinition(
       playerParty.creatures[this.partyInstanceIndex].definitionId,
     ).spriteKey;
+  }
+
+  private getPlayerBattleDisplay(): {
+    width: number;
+    height: number;
+  } {
+    return this.partyInstanceIndex < 0
+      ? BATTLE_PLAYER_DISPLAY
+      : BATTLE_CREATURE_DISPLAY;
   }
 
   private combatantFromPartyIndex(index: number): BattleCombatant {
@@ -480,7 +489,7 @@ export class BattleScene extends Phaser.Scene {
     this.hideWandererFallbackMenu();
     this.refreshHp();
     this.playerSprite.setTexture(this.getPlayerSpriteKey());
-    fitDisplay(this.playerSprite, BATTLE_PLAYER_DISPLAY);
+    fitDisplay(this.playerSprite, this.getPlayerBattleDisplay());
     this.log(`${this.player.name} steps up to fight!`);
     this.buildActionButtons();
     this.waitingForPlayer = true;
@@ -504,7 +513,7 @@ export class BattleScene extends Phaser.Scene {
     this.hideSwitchMenu();
     this.refreshHp();
     this.playerSprite.setTexture(this.getPlayerSpriteKey());
-    fitDisplay(this.playerSprite, BATTLE_PLAYER_DISPLAY);
+    fitDisplay(this.playerSprite, this.getPlayerBattleDisplay());
     this.log(`Go, ${this.player.name}!`);
     this.buildActionButtons();
 
