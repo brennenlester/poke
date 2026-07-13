@@ -421,16 +421,13 @@ export class IsometricScene extends Phaser.Scene {
         }
 
         const screen = this.toScreen(x, y);
-        const isPath = transitionSet.has(`${x},${y}`);
-        const textureKey = isPath
-          ? "floor-path"
-          : getFloorTextureKey(zone.id, (x + y) % 2 === 0);
+        const textureKey = getFloorTextureKey(zone.id, (x + y) % 2 === 0);
 
         const tile = this.add
           .image(screen.x, screen.y, textureKey)
           .setOrigin(0.5, 0.5);
 
-        if (tileType === TileType.OverworldGate && !isPath) {
+        if (tileType === TileType.OverworldGate && !transitionSet.has(`${x},${y}`)) {
           tile.setTint(
             worldState.overworldUnlocked ? 0xaaffaa : 0xffaaaa,
           );
