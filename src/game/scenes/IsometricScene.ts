@@ -551,11 +551,12 @@ export class IsometricScene extends Phaser.Scene {
 
     this.shrinePrompt = this.add
       .text(this.scale.width / 2, this.scale.height - 48, label, {
-        color: "#e8dff8",
-        backgroundColor: "#2a2440cc",
-        fontFamily: "system-ui, sans-serif",
+        color: "#1f4050",
+        backgroundColor: "#fff8ecdd",
+        fontFamily: "Source Sans 3, system-ui, sans-serif",
         fontSize: "15px",
-        padding: { x: 12, y: 6 },
+        fontStyle: "bold",
+        padding: { x: 14, y: 8 },
       })
       .setOrigin(0.5)
       .setScrollFactor(0)
