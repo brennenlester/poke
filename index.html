@@ -13,6 +13,16 @@
   </head>
   <body>
     <div id="app">
+      <div id="invite-error" class="invite-error" hidden>
+        <h1 class="invite-error-title">Invite link invalid</h1>
+        <p class="invite-error-body">
+          This join link is broken or tampered with, so the shared world could
+          not be opened. Nothing was changed on this device.
+        </p>
+        <button id="invite-error-start-fresh" type="button" class="invite-error-btn">
+          Start a fresh game
+        </button>
+      </div>
       <div id="playfield">
         <div id="game"></div>
         <div id="status-panel" aria-label="Player status">
