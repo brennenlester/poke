@@ -121,44 +121,121 @@ function generateBoundaryTexture(
 }
 
 function generateWallTextures(scene: Phaser.Scene): void {
+  // Grove — living hedge wall with mossy stump base
   generateBoundaryTexture(scene, "boundary-grove", (g) => {
-    g.fillStyle(0x5a4830, 1);
-    g.fillRect(10, BOUNDARY_HEIGHT - 14, 28, 14);
-    g.fillStyle(0x3a7828, 1);
-    g.fillCircle(24, BOUNDARY_HEIGHT - 22, 18);
-    g.fillStyle(0x5a9a40, 0.75);
-    g.fillCircle(14, BOUNDARY_HEIGHT - 28, 10);
-    g.fillCircle(34, BOUNDARY_HEIGHT - 26, 8);
+    g.fillStyle(0x000000, 0.2);
+    g.fillEllipse(24, BOUNDARY_HEIGHT - 3, 36, 7);
+
+    g.fillStyle(0x3a2818, 1);
+    g.fillRect(8, BOUNDARY_HEIGHT - 16, 32, 14);
+    g.fillStyle(0x5a4030, 1);
+    g.fillRect(10, BOUNDARY_HEIGHT - 14, 8, 10);
+    g.fillRect(22, BOUNDARY_HEIGHT - 15, 7, 11);
+    g.fillRect(32, BOUNDARY_HEIGHT - 13, 6, 9);
+
+    g.fillStyle(0x1e5a28, 1);
+    g.fillCircle(14, BOUNDARY_HEIGHT - 26, 12);
+    g.fillCircle(28, BOUNDARY_HEIGHT - 30, 14);
+    g.fillCircle(38, BOUNDARY_HEIGHT - 24, 10);
+    g.fillStyle(0x3e8a40, 0.9);
+    g.fillCircle(12, BOUNDARY_HEIGHT - 30, 8);
+    g.fillCircle(30, BOUNDARY_HEIGHT - 36, 9);
+    g.fillCircle(36, BOUNDARY_HEIGHT - 28, 7);
+    g.fillStyle(0x7aba50, 0.55);
+    g.fillCircle(10, BOUNDARY_HEIGHT - 32, 3);
+    g.fillCircle(28, BOUNDARY_HEIGHT - 38, 3);
+    g.fillCircle(40, BOUNDARY_HEIGHT - 26, 2);
+
+    g.fillStyle(0x8a5030, 1);
+    g.fillCircle(20, BOUNDARY_HEIGHT - 18, 2);
+    g.fillCircle(34, BOUNDARY_HEIGHT - 20, 2);
   });
 
+  // Shrine — moonstone pillars with rune glow
   generateBoundaryTexture(scene, "boundary-shrine", (g) => {
-    g.fillStyle(0x5a5068, 1);
-    g.fillRect(8, BOUNDARY_HEIGHT - 18, 32, 18);
+    g.fillStyle(0x000000, 0.18);
+    g.fillEllipse(24, BOUNDARY_HEIGHT - 3, 34, 6);
+
+    g.fillStyle(0x3a3450, 1);
+    g.fillRect(6, BOUNDARY_HEIGHT - 14, 36, 12);
+    g.fillStyle(0x5a5070, 1);
+    g.fillRect(8, BOUNDARY_HEIGHT - 12, 32, 8);
+
+    g.fillStyle(0x6a5a88, 1);
+    g.fillRect(10, BOUNDARY_HEIGHT - 40, 10, 28);
+    g.fillRect(28, BOUNDARY_HEIGHT - 44, 10, 32);
     g.fillStyle(0x8a78a8, 1);
-    g.fillRect(12, BOUNDARY_HEIGHT - 32, 24, 16);
-    g.fillStyle(0xc8b8e8, 0.5);
-    g.fillCircle(24, BOUNDARY_HEIGHT - 38, 4);
+    g.fillRect(12, BOUNDARY_HEIGHT - 38, 6, 24);
+    g.fillRect(30, BOUNDARY_HEIGHT - 42, 6, 28);
+
+    g.fillStyle(0xc8b8e8, 0.85);
+    g.fillCircle(15, BOUNDARY_HEIGHT - 42, 3);
+    g.fillCircle(33, BOUNDARY_HEIGHT - 46, 3);
+    g.lineStyle(1, 0xe8dff8, 0.7);
+    g.lineBetween(15, BOUNDARY_HEIGHT - 34, 15, BOUNDARY_HEIGHT - 26);
+    g.lineBetween(12, BOUNDARY_HEIGHT - 30, 18, BOUNDARY_HEIGHT - 30);
+    g.lineBetween(33, BOUNDARY_HEIGHT - 36, 33, BOUNDARY_HEIGHT - 28);
+    g.strokeCircle(33, BOUNDARY_HEIGHT - 32, 3);
+
+    g.fillStyle(0xa898c8, 0.5);
+    g.fillRect(18, BOUNDARY_HEIGHT - 20, 12, 4);
   });
 
+  // Village — timber + cobble fence with lantern post
   generateBoundaryTexture(scene, "boundary-village", (g) => {
-    g.fillStyle(0x8a6848, 1);
-    g.fillRect(6, BOUNDARY_HEIGHT - 16, 36, 16);
-    g.fillStyle(0xa88868, 1);
-    for (let i = 0; i < 4; i++) {
-      g.fillRect(10 + i * 9, BOUNDARY_HEIGHT - 28, 7, 12);
+    g.fillStyle(0x000000, 0.18);
+    g.fillEllipse(24, BOUNDARY_HEIGHT - 3, 36, 6);
+
+    g.fillStyle(0x6a5040, 1);
+    g.fillRect(4, BOUNDARY_HEIGHT - 14, 40, 12);
+    g.fillStyle(0x9a8060, 1);
+    for (let i = 0; i < 5; i++) {
+      g.fillRect(6 + i * 8, BOUNDARY_HEIGHT - 12, 6, 8);
     }
-    g.lineStyle(1, 0x6a5038, 0.6);
-    g.strokeRect(6.5, BOUNDARY_HEIGHT - 16.5, 35, 15);
+    g.lineStyle(1, 0x4a3828, 0.55);
+    g.strokeRect(4.5, BOUNDARY_HEIGHT - 13.5, 39, 11);
+
+    g.fillStyle(0x7a5840, 1);
+    g.fillRect(8, BOUNDARY_HEIGHT - 36, 6, 24);
+    g.fillRect(34, BOUNDARY_HEIGHT - 36, 6, 24);
+    g.fillStyle(0x5a4030, 1);
+    g.fillRect(7, BOUNDARY_HEIGHT - 38, 8, 4);
+    g.fillRect(33, BOUNDARY_HEIGHT - 38, 8, 4);
+
+    g.fillStyle(0xa88868, 1);
+    g.fillRect(14, BOUNDARY_HEIGHT - 30, 20, 4);
+    g.fillRect(14, BOUNDARY_HEIGHT - 22, 20, 4);
+
+    g.fillStyle(0xffcc66, 0.9);
+    g.fillCircle(11, BOUNDARY_HEIGHT - 40, 3);
+    g.fillStyle(0xff8844, 0.45);
+    g.fillCircle(11, BOUNDARY_HEIGHT - 40, 5);
   });
 
+  // Overworld — misty cliff with sky-stone cairn
   generateBoundaryTexture(scene, "boundary-overworld", (g) => {
-    g.fillStyle(0x506878, 1);
-    g.fillRect(4, BOUNDARY_HEIGHT - 20, 40, 20);
-    g.fillStyle(0x7898a8, 1);
-    g.fillTriangle(4, BOUNDARY_HEIGHT - 20, 24, BOUNDARY_HEIGHT - 44, 44, BOUNDARY_HEIGHT - 20);
-    g.fillStyle(0x98b8c8, 0.45);
-    g.fillRect(8, BOUNDARY_HEIGHT - 36, 6, 16);
-    g.fillRect(34, BOUNDARY_HEIGHT - 32, 5, 12);
+    g.fillStyle(0x000000, 0.16);
+    g.fillEllipse(24, BOUNDARY_HEIGHT - 3, 38, 6);
+
+    g.fillStyle(0x3a5060, 1);
+    g.fillRect(2, BOUNDARY_HEIGHT - 16, 44, 14);
+    g.fillStyle(0x5a7080, 1);
+    g.fillTriangle(2, BOUNDARY_HEIGHT - 16, 18, BOUNDARY_HEIGHT - 36, 34, BOUNDARY_HEIGHT - 16);
+    g.fillStyle(0x7890a0, 1);
+    g.fillTriangle(14, BOUNDARY_HEIGHT - 16, 30, BOUNDARY_HEIGHT - 44, 46, BOUNDARY_HEIGHT - 16);
+
+    g.fillStyle(0x98b0c0, 0.85);
+    g.fillRect(22, BOUNDARY_HEIGHT - 28, 10, 8);
+    g.fillRect(26, BOUNDARY_HEIGHT - 34, 8, 6);
+    g.fillRect(28, BOUNDARY_HEIGHT - 40, 6, 6);
+
+    g.fillStyle(0xb8d0e0, 0.35);
+    g.fillEllipse(12, BOUNDARY_HEIGHT - 30, 16, 6);
+    g.fillEllipse(36, BOUNDARY_HEIGHT - 38, 14, 5);
+
+    g.fillStyle(0x6a9a70, 0.55);
+    g.fillCircle(20, BOUNDARY_HEIGHT - 20, 2);
+    g.fillCircle(40, BOUNDARY_HEIGHT - 24, 2);
   });
 }
 
