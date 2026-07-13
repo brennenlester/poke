@@ -116,7 +116,7 @@ function deriveWalkFramesFromIdle(scene: Phaser.Scene, facing: Facing): void {
   for (const frame of [1, 2] as const) {
     const key = textureKey(facing, frame);
     if (scene.textures.exists(key)) {
-      continue;
+      scene.textures.remove(key);
     }
     const canvas = document.createElement("canvas");
     canvas.width = width;
@@ -143,20 +143,20 @@ export function getPlayerIdleTextureKey(facing: Facing = "south"): string {
 
 export function ensurePlayerAnims(scene: Phaser.Scene): void {
   for (const facing of FACINGS) {
-    // Prefer Imagine idle + walk frames; procedural / derived only for gaps.
+    // Style D Imagine pose as idle; derive matching stride frames from it.
+    // (Source walk2 sheets flip held props — do not use as consecutive frames.)
     generateFrame(scene, facing, 0);
-    const hasImagineWalk =
-      scene.textures.exists(textureKey(facing, 1)) &&
-      scene.textures.exists(textureKey(facing, 2));
-    if (!hasImagineWalk) {
-      if (scene.textures.exists(textureKey(facing, 0))) {
-        const src = scene.textures.get(textureKey(facing, 0)).getSourceImage() as {
-          width?: number;
-        };
-        if (src.width && src.width > FRAME_WIDTH) {
-          deriveWalkFramesFromIdle(scene, facing);
-        }
+    if (scene.textures.exists(textureKey(facing, 0))) {
+      const src = scene.textures.get(textureKey(facing, 0)).getSourceImage() as {
+        width?: number;
+      };
+      if (src.width && src.width > FRAME_WIDTH) {
+        deriveWalkFramesFromIdle(scene, facing);
+      } else {
+        generateFrame(scene, facing, 1);
+        generateFrame(scene, facing, 2);
       }
+    } else {
       generateFrame(scene, facing, 1);
       generateFrame(scene, facing, 2);
     }
@@ -177,8 +177,7 @@ export function ensurePlayerAnims(scene: Phaser.Scene): void {
     }
     scene.anims.create({
       key: walkKey,
-      // Stride uses walk frames only; idle (0) is standing and may share walk1 art.
-      frames: [1, 2, 1, 2].map((frame) => ({
+      frames: [0, 1, 2, 1].map((frame) => ({
         key: textureKey(facing, frame),
       })),
       frameRate: 8,

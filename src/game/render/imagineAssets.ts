@@ -15,15 +15,19 @@ const PROP_KEYS = [
   "prop-gate-locked",
 ] as const;
 
-/** Queue Imagine-backed PNGs. Missing files fall through to procedural ensure* helpers. */
+/**
+ * Queue Imagine-backed PNGs. Missing files fall through to procedural ensure* helpers.
+ *
+ * ponytail: only Style D walk1 is loaded as the canonical trainer pose per facing.
+ * Source walk2 art flips held props mid-cycle; stride frames are derived from walk1
+ * until matching dual-pose Imagine sheets exist.
+ */
 export function preloadImagineAssets(scene: Phaser.Scene): void {
   for (const facing of FACINGS) {
-    for (const frame of [0, 1, 2] as const) {
-      scene.load.image(
-        `player-${facing}-${frame}`,
-        `assets/player/player-${facing}-${frame}.png`,
-      );
-    }
+    scene.load.image(
+      `player-${facing}-0`,
+      `assets/player/player-${facing}-0.png`,
+    );
   }
 
   for (const creature of CREATURES) {
