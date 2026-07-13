@@ -60,4 +60,8 @@ export function promoteImagineAtlasFrames(scene: Phaser.Scene): void {
     );
     scene.textures.addCanvas(frameName, canvas);
   }
+
+  // Drop the packed atlas once frames are promoted — keeps cold-load request
+  // consolidation without holding both atlas + per-key textures in GPU memory.
+  scene.textures.remove(IMAGINE_ATLAS_KEY);
 }

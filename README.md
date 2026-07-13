@@ -53,7 +53,7 @@ Host progress (party, inventory, quests, position, gate) lives in `localStorage`
 
 ## Development
 
-**Requirements:** Node.js 20+ and npm.
+**Requirements:** Node.js 20.9+ and npm.
 
 ```bash
 npm install
