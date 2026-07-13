@@ -5,12 +5,12 @@ import { ensureCreatureTextures } from "../creatures/sprites";
 import { UNARMED_WANDERER } from "../battle/wandererWeapons";
 import { isVisitorMode } from "../world/worldSession";
 
-const PANEL_WIDTH = 420;
-const PANEL_HEIGHT = 280;
-const PANEL_PADDING = 32;
+const PANEL_WIDTH = 440;
+const PANEL_HEIGHT = 300;
+const PANEL_PADDING = 28;
 
 const TEXT_STYLE = {
-  fontFamily: "system-ui, sans-serif",
+  fontFamily: "Source Sans 3, system-ui, sans-serif",
 } as const;
 
 export class EncounterScene extends Phaser.Scene {
@@ -30,8 +30,10 @@ export class EncounterScene extends Phaser.Scene {
     ensureCreatureTextures(this);
     const def = getCreatureDefinition(this.creatureId);
 
+    this.cameras.main.fadeIn(160, 255, 255, 255);
+
     this.add
-      .rectangle(0, 0, this.scale.width, this.scale.height, 0x000000, 0.65)
+      .rectangle(0, 0, this.scale.width, this.scale.height, 0x1a3048, 0.55)
       .setOrigin(0)
       .setInteractive();
 
@@ -41,38 +43,61 @@ export class EncounterScene extends Phaser.Scene {
     const innerLeft = panelLeft + PANEL_PADDING;
     const innerWidth = PANEL_WIDTH - PANEL_PADDING * 2;
 
-    this.add
-      .rectangle(panelX, panelY, PANEL_WIDTH, PANEL_HEIGHT, 0x2a2a3e, 0.95)
-      .setStrokeStyle(2, 0xf0e6d2);
+    const panel = this.add.graphics();
+    panel.fillStyle(0xfff8ec, 0.97);
+    panel.fillRoundedRect(
+      panelX - PANEL_WIDTH / 2,
+      panelY - PANEL_HEIGHT / 2,
+      PANEL_WIDTH,
+      PANEL_HEIGHT,
+      22,
+    );
+    panel.lineStyle(4, 0x6eb8a8, 1);
+    panel.strokeRoundedRect(
+      panelX - PANEL_WIDTH / 2,
+      panelY - PANEL_HEIGHT / 2,
+      PANEL_WIDTH,
+      PANEL_HEIGHT,
+      22,
+    );
+    panel.lineStyle(2, 0xd8efe8, 0.9);
+    panel.strokeRoundedRect(
+      panelX - PANEL_WIDTH / 2 + 6,
+      panelY - PANEL_HEIGHT / 2 + 6,
+      PANEL_WIDTH - 12,
+      PANEL_HEIGHT - 12,
+      18,
+    );
 
     this.add
-      .image(panelX, panelY - 72, def.spriteKey)
-      .setScale(1.5)
+      .image(panelX, panelY - 78, def.spriteKey)
+      .setScale(2.1)
       .setOrigin(0.5);
 
     this.addPanelText(
       panelX,
-      panelY - 24,
+      panelY - 8,
       `A wild ${def.name} appeared!`,
       innerWidth,
       {
-        color: "#f0e6d2",
-        fontSize: "18px",
+        color: "#2a4050",
+        fontSize: "22px",
+        fontStyle: "bold",
       },
     );
 
     this.addPanelText(
       panelX,
-      panelY + 8,
+      panelY + 24,
       `Type: ${def.folkloreType}`,
       innerWidth,
       {
-        color: "#c8b8a0",
+        color: "#5a7888",
         fontSize: "14px",
       },
     );
 
-    const buttonY = panelY + 68;
+    const buttonY = panelY + 84;
     const buttonLabels = ["Befriend", "Spar", "Flee"] as const;
     const buttonActions = [
       () => this.tryBefriend(),
@@ -83,7 +108,7 @@ export class EncounterScene extends Phaser.Scene {
 
     buttonLabels.forEach((label, index) => {
       const buttonX = innerLeft + buttonSlotWidth * (index + 0.5);
-      this.addButton(buttonX, buttonY, label, buttonActions[index]);
+      this.addButton(buttonX, buttonY, label, buttonActions[index], index);
     });
   }
 
@@ -111,18 +136,23 @@ export class EncounterScene extends Phaser.Scene {
     y: number,
     label: string,
     onClick: () => void,
+    index: number,
   ): void {
+    const tones = ["#7ed6a8", "#7ec8e8", "#f0c878"] as const;
     const btn = this.add
       .text(x, y, label, {
-        color: "#1a1a2e",
-        backgroundColor: "#f0e6d2",
+        color: "#1a3040",
+        backgroundColor: tones[index],
         ...TEXT_STYLE,
         fontSize: "16px",
-        padding: { x: 10, y: 8 },
+        fontStyle: "bold",
+        padding: { x: 14, y: 10 },
       })
       .setOrigin(0.5)
       .setInteractive({ useHandCursor: true });
 
+    btn.on("pointerover", () => btn.setAlpha(0.88));
+    btn.on("pointerout", () => btn.setAlpha(1));
     btn.on("pointerdown", onClick);
   }
 
@@ -151,12 +181,13 @@ export class EncounterScene extends Phaser.Scene {
   private showResult(message: string): void {
     const text = this.addPanelText(
       this.scale.width / 2,
-      this.scale.height / 2 + 120,
+      this.scale.height / 2 + 128,
       message,
       PANEL_WIDTH - PANEL_PADDING * 2,
       {
-        color: "#f0e6d2",
+        color: "#2a4050",
         fontSize: "18px",
+        fontStyle: "bold",
       },
     );
     this.time.delayedCall(900, () => {
@@ -171,11 +202,14 @@ export class EncounterScene extends Phaser.Scene {
     }
     this.actionTaken = true;
 
-    this.scene.launch("BattleScene", {
-      wildCreatureId: this.creatureId,
-      wandererPartner: UNARMED_WANDERER,
+    this.cameras.main.fadeOut(120, 255, 255, 255);
+    this.time.delayedCall(130, () => {
+      this.scene.launch("BattleScene", {
+        wildCreatureId: this.creatureId,
+        wandererPartner: UNARMED_WANDERER,
+      });
+      this.scene.stop("EncounterScene");
     });
-    this.scene.stop("EncounterScene");
   }
 
   private flee(): void {
@@ -187,7 +221,10 @@ export class EncounterScene extends Phaser.Scene {
   }
 
   private endEncounter(): void {
-    this.scene.stop("EncounterScene");
-    this.scene.resume("IsometricScene");
+    this.cameras.main.fadeOut(140, 255, 255, 255);
+    this.time.delayedCall(150, () => {
+      this.scene.stop("EncounterScene");
+      this.scene.resume("IsometricScene");
+    });
   }
 }

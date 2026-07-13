@@ -5,10 +5,10 @@ import type { ZoneId } from "../world/zoneTypes";
 type ZonePalette = { light: number; dark: number; accent: number; edge: number };
 
 const ZONE_PALETTES: Record<ZoneId, ZonePalette> = {
-  grove: { light: 0xa8c878, dark: 0x6a9050, accent: 0x88b060, edge: 0x4a6838 },
-  shrine: { light: 0xd8c8e8, dark: 0x9888b8, accent: 0xb8a8d0, edge: 0x6a5878 },
-  village: { light: 0xe8d0a0, dark: 0xc0a070, accent: 0xd8b888, edge: 0x8a6840 },
-  overworld: { light: 0xb8d0e0, dark: 0x7898b0, accent: 0x98b8c8, edge: 0x506878 },
+  grove: { light: 0xb9df7b, dark: 0x87be64, accent: 0xe7f2a4, edge: 0x4e8a4b },
+  shrine: { light: 0xd9d5ed, dark: 0xa9a8cf, accent: 0xf4e8ff, edge: 0x696a9d },
+  village: { light: 0xeec58a, dark: 0xd89a5e, accent: 0xffe2a2, edge: 0xa96a43 },
+  overworld: { light: 0x78c8e0, dark: 0x4fa8c8, accent: 0xb8e8f0, edge: 0x387898 },
 };
 
 const WORLD_TEXTURE_KEYS = [
@@ -26,16 +26,18 @@ const WORLD_TEXTURE_KEYS = [
   "prop-cottage",
   "prop-gate",
   "prop-gate-locked",
-  "player-south",
-  "player-north",
-  "player-east",
-  "player-west",
 ] as const;
 
 const BOUNDARY_HEIGHT = 56;
+const OUTLINE = 0x1a3040;
 
 function removeStaleTextures(scene: Phaser.Scene, zoneId: ZoneId): void {
   for (const key of WORLD_TEXTURE_KEYS) {
+    if (scene.textures.exists(key)) {
+      scene.textures.remove(key);
+    }
+  }
+  for (const key of ["player-south", "player-north", "player-east", "player-west"]) {
     if (scene.textures.exists(key)) {
       scene.textures.remove(key);
     }
@@ -54,7 +56,7 @@ function drawSquareTile(
   h: number,
   fill: number,
   stroke: number,
-  strokeAlpha = 0.45,
+  strokeAlpha = 0.35,
 ): void {
   g.fillStyle(fill, 1);
   g.fillRect(0, 0, w, h);
@@ -69,36 +71,56 @@ function generateFloorTextures(scene: Phaser.Scene, zoneId: ZoneId): void {
     const base = variant === "light" ? palette.light : palette.dark;
     const g = scene.make.graphics({ x: 0, y: 0 });
     drawSquareTile(g, TILE_WIDTH, TILE_HEIGHT, base, palette.edge);
-    g.fillStyle(palette.accent, 0.18);
+    g.fillStyle(palette.accent, 0.22);
     for (let i = 0; i < 10; i += 1) {
       const x = 5 + ((i * 17 + (variant === "light" ? 3 : 9)) % 38);
       const y = 5 + ((i * 11 + (variant === "light" ? 7 : 2)) % 38);
-      g.fillRect(x, y, i % 3 === 0 ? 2 : 1, 1);
+      g.fillCircle(x, y, i % 3 === 0 ? 2 : 1);
     }
     if (zoneId === "grove") {
-      g.fillStyle(0x547c38, 0.45);
-      g.fillTriangle(8, 15, 11, 8, 13, 15);
-      g.fillTriangle(31, 34, 34, 25, 36, 34);
-      g.fillStyle(0xc0d878, 0.35);
-      g.fillCircle(16, 29, 1);
-      g.fillCircle(39, 12, 1);
+      // Soft tufted grass clumps
+      g.fillStyle(0x529447, 0.55);
+      for (const [x, y] of [
+        [8, 16],
+        [31, 34],
+        [20, 26],
+        [38, 18],
+      ]) {
+        g.fillTriangle(x, y, x + 3, y - 7, x + 6, y);
+        g.fillTriangle(x + 2, y, x + 5, y - 5, x + 7, y);
+      }
+      g.fillStyle(0xf2f7aa, 0.7);
+      g.fillCircle(16, 29, 2);
+      g.fillCircle(39, 12, 2);
     } else if (zoneId === "shrine") {
-      g.fillStyle(0xf0e6ff, 0.35);
-      g.fillCircle(TILE_WIDTH / 2, TILE_HEIGHT / 2, 2);
-      g.lineStyle(1, 0xe8e0f8, 0.4);
-      g.strokeCircle(TILE_WIDTH / 2, TILE_HEIGHT / 2, 6);
-      g.lineBetween(19, 24, 29, 24);
-      g.lineBetween(24, 19, 24, 29);
+      // Moonlit stone pavers
+      g.fillStyle(0xf8f2ff, 0.28);
+      g.fillRoundedRect(6, 6, 14, 14, 3);
+      g.fillRoundedRect(28, 26, 12, 12, 3);
+      g.fillStyle(0xf0e6ff, 0.5);
+      g.fillCircle(TILE_WIDTH / 2, TILE_HEIGHT / 2, 3);
+      g.lineStyle(1, 0xffffff, 0.45);
+      g.strokeCircle(TILE_WIDTH / 2, TILE_HEIGHT / 2, 8);
+      g.lineBetween(18, 24, 30, 24);
+      g.lineBetween(24, 18, 24, 30);
     } else if (zoneId === "village") {
-      g.fillStyle(0x8a5c3c, 0.3);
-      g.fillRect(7, 11, 13, 1);
-      g.fillRect(25, 30, 12, 1);
-      g.fillRect(12, 36, 9, 1);
+      // Warm dirt + plank streaks
+      g.fillStyle(0xa8643d, 0.4);
+      g.fillRoundedRect(6, 10, 16, 4, 2);
+      g.fillRoundedRect(24, 28, 14, 4, 2);
+      g.fillRoundedRect(10, 34, 12, 3, 1);
+      g.fillStyle(0xffe8b8, 0.35);
+      g.fillCircle(18, 20, 2);
     } else {
-      g.fillStyle(0xd0e6f0, 0.28);
-      g.fillCircle(11, 12, 1);
-      g.fillCircle(35, 31, 1);
-      g.lineStyle(1, 0x587c90, 0.28);
+      // Bright blue route grass
+      g.fillStyle(0xdff7f4, 0.55);
+      g.fillCircle(11, 12, 2);
+      g.fillCircle(35, 31, 2);
+      g.fillCircle(22, 20, 1);
+      g.fillStyle(0x3e8f98, 0.45);
+      g.fillTriangle(8, 36, 11, 28, 14, 36);
+      g.fillTriangle(30, 18, 33, 10, 36, 18);
+      g.lineStyle(1, 0x3e8f83, 0.35);
       g.lineBetween(7, 35, 18, 30);
     }
     g.generateTexture(key, TILE_WIDTH, TILE_HEIGHT);
@@ -121,340 +143,307 @@ function generateBoundaryTexture(
 }
 
 function generateWallTextures(scene: Phaser.Scene): void {
-  // Grove — living hedge wall with mossy stump base
+  // Grove — fluffy hedge trees
   generateBoundaryTexture(scene, "boundary-grove", (g) => {
-    g.fillStyle(0x000000, 0.2);
+    g.fillStyle(0x000000, 0.16);
     g.fillEllipse(24, BOUNDARY_HEIGHT - 3, 36, 7);
 
-    g.fillStyle(0x3a2818, 1);
-    g.fillRect(8, BOUNDARY_HEIGHT - 16, 32, 14);
     g.fillStyle(0x5a4030, 1);
-    g.fillRect(10, BOUNDARY_HEIGHT - 14, 8, 10);
-    g.fillRect(22, BOUNDARY_HEIGHT - 15, 7, 11);
-    g.fillRect(32, BOUNDARY_HEIGHT - 13, 6, 9);
+    g.fillRoundedRect(18, BOUNDARY_HEIGHT - 20, 12, 16, 3);
+    g.fillStyle(0x7a5840, 1);
+    g.fillRoundedRect(20, BOUNDARY_HEIGHT - 18, 8, 12, 2);
 
-    g.fillStyle(0x1e5a28, 1);
-    g.fillCircle(14, BOUNDARY_HEIGHT - 26, 12);
-    g.fillCircle(28, BOUNDARY_HEIGHT - 30, 14);
-    g.fillCircle(38, BOUNDARY_HEIGHT - 24, 10);
-    g.fillStyle(0x3e8a40, 0.9);
-    g.fillCircle(12, BOUNDARY_HEIGHT - 30, 8);
-    g.fillCircle(30, BOUNDARY_HEIGHT - 36, 9);
-    g.fillCircle(36, BOUNDARY_HEIGHT - 28, 7);
-    g.fillStyle(0x7aba50, 0.55);
-    g.fillCircle(10, BOUNDARY_HEIGHT - 32, 3);
-    g.fillCircle(28, BOUNDARY_HEIGHT - 38, 3);
-    g.fillCircle(40, BOUNDARY_HEIGHT - 26, 2);
-
-    g.fillStyle(0x8a5030, 1);
-    g.fillCircle(20, BOUNDARY_HEIGHT - 18, 2);
-    g.fillCircle(34, BOUNDARY_HEIGHT - 20, 2);
+    g.fillStyle(OUTLINE, 1);
+    g.fillCircle(12, BOUNDARY_HEIGHT - 28, 14);
+    g.fillCircle(28, BOUNDARY_HEIGHT - 34, 16);
+    g.fillCircle(38, BOUNDARY_HEIGHT - 26, 12);
+    g.fillStyle(0x2f9a4a, 1);
+    g.fillCircle(12, BOUNDARY_HEIGHT - 28, 12);
+    g.fillCircle(28, BOUNDARY_HEIGHT - 34, 14);
+    g.fillCircle(38, BOUNDARY_HEIGHT - 26, 10);
+    g.fillStyle(0x6ed86a, 0.95);
+    g.fillCircle(8, BOUNDARY_HEIGHT - 34, 7);
+    g.fillCircle(26, BOUNDARY_HEIGHT - 42, 8);
+    g.fillCircle(40, BOUNDARY_HEIGHT - 32, 6);
+    g.fillStyle(0xd8f890, 0.7);
+    g.fillCircle(6, BOUNDARY_HEIGHT - 36, 3);
+    g.fillCircle(24, BOUNDARY_HEIGHT - 44, 3);
+    g.fillCircle(42, BOUNDARY_HEIGHT - 30, 2);
   });
 
-  // Shrine — moonstone pillars with rune glow
+  // Shrine — bright moonstone pillars
   generateBoundaryTexture(scene, "boundary-shrine", (g) => {
-    g.fillStyle(0x000000, 0.18);
+    g.fillStyle(0x000000, 0.14);
     g.fillEllipse(24, BOUNDARY_HEIGHT - 3, 34, 6);
 
-    g.fillStyle(0x3a3450, 1);
-    g.fillRect(6, BOUNDARY_HEIGHT - 14, 36, 12);
-    g.fillStyle(0x5a5070, 1);
-    g.fillRect(8, BOUNDARY_HEIGHT - 12, 32, 8);
+    g.fillStyle(0x6a6488, 1);
+    g.fillRoundedRect(6, BOUNDARY_HEIGHT - 14, 36, 12, 3);
+    g.fillStyle(0x9a94c0, 1);
+    g.fillRoundedRect(8, BOUNDARY_HEIGHT - 12, 32, 8, 2);
 
-    g.fillStyle(0x6a5a88, 1);
-    g.fillRect(10, BOUNDARY_HEIGHT - 40, 10, 28);
-    g.fillRect(28, BOUNDARY_HEIGHT - 44, 10, 32);
-    g.fillStyle(0x8a78a8, 1);
-    g.fillRect(12, BOUNDARY_HEIGHT - 38, 6, 24);
-    g.fillRect(30, BOUNDARY_HEIGHT - 42, 6, 28);
+    g.fillStyle(OUTLINE, 1);
+    g.fillRoundedRect(9, BOUNDARY_HEIGHT - 42, 12, 30, 4);
+    g.fillRoundedRect(27, BOUNDARY_HEIGHT - 46, 12, 34, 4);
+    g.fillStyle(0x9a8cd0, 1);
+    g.fillRoundedRect(11, BOUNDARY_HEIGHT - 40, 8, 26, 3);
+    g.fillRoundedRect(29, BOUNDARY_HEIGHT - 44, 8, 30, 3);
+    g.fillStyle(0xe8dcff, 0.95);
+    g.fillRoundedRect(13, BOUNDARY_HEIGHT - 38, 4, 20, 2);
+    g.fillRoundedRect(31, BOUNDARY_HEIGHT - 42, 4, 24, 2);
 
-    g.fillStyle(0xc8b8e8, 0.85);
-    g.fillCircle(15, BOUNDARY_HEIGHT - 42, 3);
-    g.fillCircle(33, BOUNDARY_HEIGHT - 46, 3);
-    g.lineStyle(1, 0xe8dff8, 0.7);
-    g.lineBetween(15, BOUNDARY_HEIGHT - 34, 15, BOUNDARY_HEIGHT - 26);
-    g.lineBetween(12, BOUNDARY_HEIGHT - 30, 18, BOUNDARY_HEIGHT - 30);
-    g.lineBetween(33, BOUNDARY_HEIGHT - 36, 33, BOUNDARY_HEIGHT - 28);
-    g.strokeCircle(33, BOUNDARY_HEIGHT - 32, 3);
-
-    g.fillStyle(0xa898c8, 0.5);
-    g.fillRect(18, BOUNDARY_HEIGHT - 20, 12, 4);
+    g.fillStyle(0xffffff, 0.9);
+    g.fillCircle(15, BOUNDARY_HEIGHT - 44, 4);
+    g.fillCircle(33, BOUNDARY_HEIGHT - 48, 4);
+    g.lineStyle(1, 0xffffff, 0.75);
+    g.lineBetween(15, BOUNDARY_HEIGHT - 34, 15, BOUNDARY_HEIGHT - 24);
+    g.lineBetween(12, BOUNDARY_HEIGHT - 29, 18, BOUNDARY_HEIGHT - 29);
+    g.strokeCircle(33, BOUNDARY_HEIGHT - 34, 3);
   });
 
-  // Village — timber + cobble fence with lantern post
+  // Village — warm timber fence
   generateBoundaryTexture(scene, "boundary-village", (g) => {
-    g.fillStyle(0x000000, 0.18);
+    g.fillStyle(0x000000, 0.14);
     g.fillEllipse(24, BOUNDARY_HEIGHT - 3, 36, 6);
 
-    g.fillStyle(0x6a5040, 1);
-    g.fillRect(4, BOUNDARY_HEIGHT - 14, 40, 12);
-    g.fillStyle(0x9a8060, 1);
+    g.fillStyle(0x8a6848, 1);
+    g.fillRoundedRect(4, BOUNDARY_HEIGHT - 14, 40, 12, 3);
+    g.fillStyle(0xd0a878, 1);
     for (let i = 0; i < 5; i++) {
-      g.fillRect(6 + i * 8, BOUNDARY_HEIGHT - 12, 6, 8);
+      g.fillRoundedRect(6 + i * 8, BOUNDARY_HEIGHT - 12, 6, 8, 1);
     }
-    g.lineStyle(1, 0x4a3828, 0.55);
-    g.strokeRect(4.5, BOUNDARY_HEIGHT - 13.5, 39, 11);
 
-    g.fillStyle(0x7a5840, 1);
-    g.fillRect(8, BOUNDARY_HEIGHT - 36, 6, 24);
-    g.fillRect(34, BOUNDARY_HEIGHT - 36, 6, 24);
-    g.fillStyle(0x5a4030, 1);
-    g.fillRect(7, BOUNDARY_HEIGHT - 38, 8, 4);
-    g.fillRect(33, BOUNDARY_HEIGHT - 38, 8, 4);
+    g.fillStyle(OUTLINE, 1);
+    g.fillRoundedRect(7, BOUNDARY_HEIGHT - 38, 8, 26, 2);
+    g.fillRoundedRect(33, BOUNDARY_HEIGHT - 38, 8, 26, 2);
+    g.fillStyle(0xc48858, 1);
+    g.fillRoundedRect(8, BOUNDARY_HEIGHT - 36, 6, 24, 2);
+    g.fillRoundedRect(34, BOUNDARY_HEIGHT - 36, 6, 24, 2);
+    g.fillStyle(0xe8b878, 1);
+    g.fillRoundedRect(7, BOUNDARY_HEIGHT - 40, 8, 5, 2);
+    g.fillRoundedRect(33, BOUNDARY_HEIGHT - 40, 8, 5, 2);
 
-    g.fillStyle(0xa88868, 1);
-    g.fillRect(14, BOUNDARY_HEIGHT - 30, 20, 4);
-    g.fillRect(14, BOUNDARY_HEIGHT - 22, 20, 4);
+    g.fillStyle(0xf0c890, 1);
+    g.fillRoundedRect(14, BOUNDARY_HEIGHT - 30, 20, 5, 2);
+    g.fillRoundedRect(14, BOUNDARY_HEIGHT - 22, 20, 5, 2);
 
-    g.fillStyle(0xffcc66, 0.9);
-    g.fillCircle(11, BOUNDARY_HEIGHT - 40, 3);
-    g.fillStyle(0xff8844, 0.45);
-    g.fillCircle(11, BOUNDARY_HEIGHT - 40, 5);
+    g.fillStyle(0xffe066, 1);
+    g.fillCircle(11, BOUNDARY_HEIGHT - 42, 4);
+    g.fillStyle(0xffaa55, 0.45);
+    g.fillCircle(11, BOUNDARY_HEIGHT - 42, 7);
   });
 
-  // Overworld — misty cliff with sky-stone cairn
+  // Overworld — bright route cliffs
   generateBoundaryTexture(scene, "boundary-overworld", (g) => {
-    g.fillStyle(0x000000, 0.16);
+    g.fillStyle(0x000000, 0.14);
     g.fillEllipse(24, BOUNDARY_HEIGHT - 3, 38, 6);
 
-    g.fillStyle(0x3a5060, 1);
-    g.fillRect(2, BOUNDARY_HEIGHT - 16, 44, 14);
-    g.fillStyle(0x5a7080, 1);
-    g.fillTriangle(2, BOUNDARY_HEIGHT - 16, 18, BOUNDARY_HEIGHT - 36, 34, BOUNDARY_HEIGHT - 16);
-    g.fillStyle(0x7890a0, 1);
-    g.fillTriangle(14, BOUNDARY_HEIGHT - 16, 30, BOUNDARY_HEIGHT - 44, 46, BOUNDARY_HEIGHT - 16);
+    g.fillStyle(OUTLINE, 1);
+    g.fillRoundedRect(2, BOUNDARY_HEIGHT - 16, 44, 14, 3);
+    g.fillStyle(0x5a90a8, 1);
+    g.fillRoundedRect(3, BOUNDARY_HEIGHT - 15, 42, 12, 2);
 
-    g.fillStyle(0x98b0c0, 0.85);
-    g.fillRect(22, BOUNDARY_HEIGHT - 28, 10, 8);
-    g.fillRect(26, BOUNDARY_HEIGHT - 34, 8, 6);
-    g.fillRect(28, BOUNDARY_HEIGHT - 40, 6, 6);
+    g.fillStyle(0x78b0c8, 1);
+    g.fillTriangle(2, BOUNDARY_HEIGHT - 16, 18, BOUNDARY_HEIGHT - 38, 34, BOUNDARY_HEIGHT - 16);
+    g.fillStyle(0x98d0e0, 1);
+    g.fillTriangle(14, BOUNDARY_HEIGHT - 16, 30, BOUNDARY_HEIGHT - 46, 46, BOUNDARY_HEIGHT - 16);
 
-    g.fillStyle(0xb8d0e0, 0.35);
+    g.fillStyle(0xd0f0f8, 0.95);
+    g.fillRoundedRect(22, BOUNDARY_HEIGHT - 30, 10, 8, 2);
+    g.fillRoundedRect(26, BOUNDARY_HEIGHT - 36, 8, 6, 2);
+    g.fillRoundedRect(28, BOUNDARY_HEIGHT - 42, 6, 6, 2);
+
+    g.fillStyle(0xe8fff8, 0.4);
     g.fillEllipse(12, BOUNDARY_HEIGHT - 30, 16, 6);
     g.fillEllipse(36, BOUNDARY_HEIGHT - 38, 14, 5);
 
-    g.fillStyle(0x6a9a70, 0.55);
-    g.fillCircle(20, BOUNDARY_HEIGHT - 20, 2);
-    g.fillCircle(40, BOUNDARY_HEIGHT - 24, 2);
+    g.fillStyle(0x6ed890, 0.7);
+    g.fillCircle(18, BOUNDARY_HEIGHT - 20, 3);
+    g.fillCircle(40, BOUNDARY_HEIGHT - 24, 3);
   });
 }
 
 function generatePropTextures(scene: Phaser.Scene): void {
   if (!scene.textures.exists("prop-tree")) {
     const g = scene.make.graphics({ x: 0, y: 0 });
-    g.fillStyle(0x000000, 0.18);
+    g.fillStyle(0x000000, 0.16);
     g.fillEllipse(25, 47, 28, 6);
-    g.fillStyle(0x38261a, 1);
-    g.fillRect(19, 29, 10, 19);
-    g.fillStyle(0x6a4428, 1);
-    g.fillRect(22, 28, 4, 19);
-    g.lineStyle(1, 0x2a1a12, 0.7);
-    g.lineBetween(24, 31, 16, 39);
-    g.lineBetween(24, 35, 32, 27);
-    g.fillStyle(0x245c28, 1);
-    g.fillCircle(24, 19, 17);
-    g.fillCircle(15, 25, 11);
-    g.fillCircle(34, 25, 10);
-    g.fillStyle(0x4e923c, 0.85);
-    g.fillCircle(18, 14, 9);
-    g.fillCircle(30, 16, 9);
-    g.fillStyle(0x8cba54, 0.55);
-    g.fillCircle(17, 12, 3);
-    g.fillCircle(30, 16, 2);
+    g.fillStyle(OUTLINE, 1);
+    g.fillRoundedRect(20, 28, 10, 20, 3);
+    g.fillStyle(0x8a5a38, 1);
+    g.fillRoundedRect(21, 29, 8, 18, 2);
+    g.fillStyle(OUTLINE, 1);
+    g.fillCircle(24, 18, 18);
+    g.fillCircle(14, 24, 12);
+    g.fillCircle(34, 24, 11);
+    g.fillStyle(0x3cbc58, 1);
+    g.fillCircle(24, 18, 16);
+    g.fillCircle(14, 24, 10);
+    g.fillCircle(34, 24, 9);
+    g.fillStyle(0x7ae068, 0.95);
+    g.fillCircle(18, 12, 8);
+    g.fillCircle(30, 14, 8);
+    g.fillStyle(0xe8f898, 0.7);
+    g.fillCircle(16, 10, 3);
+    g.fillCircle(30, 14, 2);
     g.generateTexture("prop-tree", 48, 50);
     g.destroy();
   }
 
   if (!scene.textures.exists("prop-fern")) {
     const g = scene.make.graphics({ x: 0, y: 0 });
-    g.fillStyle(0x294c2c, 1);
-    g.fillTriangle(20, 30, 5, 12, 20, 18);
-    g.fillTriangle(20, 30, 35, 8, 25, 22);
-    g.fillStyle(0x6cb85a, 1);
-    g.fillTriangle(20, 28, 8, 7, 21, 18);
-    g.fillTriangle(20, 28, 32, 5, 24, 19);
-    g.fillTriangle(20, 28, 15, 4, 22, 18);
-    g.fillStyle(0xa4d878, 0.7);
-    g.fillCircle(15, 13, 2);
+    g.fillStyle(OUTLINE, 1);
+    g.fillTriangle(20, 30, 4, 10, 20, 18);
+    g.fillTriangle(20, 30, 36, 6, 26, 20);
+    g.fillStyle(0x4cbc68, 1);
+    g.fillTriangle(20, 28, 7, 8, 20, 18);
+    g.fillTriangle(20, 28, 33, 5, 25, 19);
+    g.fillStyle(0x9ae878, 1);
+    g.fillTriangle(20, 28, 14, 4, 22, 18);
+    g.fillStyle(0xe8f8a0, 0.8);
+    g.fillCircle(15, 12, 2);
     g.generateTexture("prop-fern", 40, 32);
     g.destroy();
   }
 
   if (!scene.textures.exists("prop-shrine-altar")) {
     const g = scene.make.graphics({ x: 0, y: 0 });
-    g.fillStyle(0x40354e, 1);
-    g.fillRect(8, 24, 32, 12);
-    g.fillStyle(0x76628e, 1);
-    g.fillRect(12, 16, 24, 10);
-    g.fillStyle(0x9f8abc, 1);
-    g.fillRect(15, 18, 18, 5);
-    g.fillStyle(0xc8b8e8, 0.9);
+    g.fillStyle(OUTLINE, 1);
+    g.fillRoundedRect(7, 23, 34, 14, 4);
+    g.fillStyle(0x6a5a88, 1);
+    g.fillRoundedRect(8, 24, 32, 12, 3);
+    g.fillStyle(0x9a88c0, 1);
+    g.fillRoundedRect(12, 16, 24, 12, 4);
+    g.fillStyle(0xd8c8f0, 1);
+    g.fillRoundedRect(15, 18, 18, 6, 2);
+    g.fillStyle(0xffffff, 0.95);
     g.fillCircle(24, 10, 8);
-    g.lineStyle(1, 0xf0e6ff, 0.55);
-    g.strokeCircle(24, 10, 10);
+    g.fillStyle(0xf0e6ff, 0.55);
+    g.fillCircle(24, 10, 12);
+    g.lineStyle(2, 0xffffff, 0.7);
+    g.strokeCircle(24, 10, 11);
     g.generateTexture("prop-shrine-altar", 48, 40);
     g.destroy();
   }
 
   if (!scene.textures.exists("prop-standing-stone")) {
     const g = scene.make.graphics({ x: 0, y: 0 });
-    g.fillStyle(0x000000, 0.18);
+    g.fillStyle(0x000000, 0.16);
     g.fillEllipse(21, 35, 22, 5);
-    g.fillStyle(0x514a64, 1);
-    g.fillTriangle(15, 34, 16, 11, 22, 5);
-    g.fillTriangle(22, 5, 29, 12, 28, 34);
-    g.fillStyle(0x817798, 1);
-    g.fillTriangle(18, 31, 18, 13, 22, 8);
-    g.fillStyle(0xc0b0d0, 0.6);
-    g.fillCircle(22, 18, 2);
-    g.fillCircle(22, 25, 1);
+    g.fillStyle(OUTLINE, 1);
+    g.fillTriangle(14, 34, 15, 10, 22, 4);
+    g.fillTriangle(22, 4, 30, 11, 29, 34);
+    g.fillStyle(0x8a84b0, 1);
+    g.fillTriangle(16, 32, 17, 12, 22, 7);
+    g.fillTriangle(22, 7, 28, 13, 27, 32);
+    g.fillStyle(0xe0d8f8, 0.85);
+    g.fillCircle(22, 17, 3);
+    g.fillCircle(22, 24, 2);
     g.generateTexture("prop-standing-stone", 42, 38);
     g.destroy();
   }
 
   if (!scene.textures.exists("prop-pebble-pile")) {
     const g = scene.make.graphics({ x: 0, y: 0 });
-    g.fillStyle(0x5c5a64, 1);
+    g.fillStyle(OUTLINE, 1);
+    g.fillCircle(14, 24, 6);
+    g.fillCircle(22, 26, 5);
+    g.fillCircle(30, 23, 6);
+    g.fillCircle(18, 19, 4);
+    g.fillCircle(26, 17, 5);
+    g.fillStyle(0xa8a4b8, 1);
     g.fillCircle(14, 24, 5);
     g.fillCircle(22, 26, 4);
     g.fillCircle(30, 23, 5);
-    g.fillCircle(18, 20, 3);
-    g.fillCircle(26, 18, 4);
-    g.fillStyle(0xb4b0bd, 0.65);
-    g.fillCircle(17, 20, 2);
-    g.fillCircle(28, 17, 2);
+    g.fillCircle(18, 19, 3);
+    g.fillCircle(26, 17, 4);
+    g.fillStyle(0xf0ecf8, 0.75);
+    g.fillCircle(17, 19, 2);
+    g.fillCircle(28, 16, 2);
     g.generateTexture("prop-pebble-pile", 44, 32);
     g.destroy();
   }
 
   if (!scene.textures.exists("prop-hearth")) {
     const g = scene.make.graphics({ x: 0, y: 0 });
-    g.fillStyle(0x493326, 1);
-    g.fillRect(6, 18, 36, 18);
-    g.fillStyle(0x76513a, 1);
-    g.fillRect(14, 6, 20, 14);
-    g.fillStyle(0x211812, 1);
-    g.fillRect(18, 20, 12, 10);
-    g.fillStyle(0xff6c28, 0.9);
-    g.fillCircle(24, 18, 5);
-    g.fillStyle(0xffd26a, 0.9);
-    g.fillCircle(24, 17, 2);
+    g.fillStyle(OUTLINE, 1);
+    g.fillRoundedRect(5, 17, 38, 20, 4);
+    g.fillStyle(0x6a4838, 1);
+    g.fillRoundedRect(6, 18, 36, 18, 3);
+    g.fillStyle(0xa87858, 1);
+    g.fillRoundedRect(14, 6, 20, 14, 4);
+    g.fillStyle(0x2a1810, 1);
+    g.fillRoundedRect(18, 20, 12, 10, 2);
+    g.fillStyle(0xff8844, 0.95);
+    g.fillCircle(24, 18, 6);
+    g.fillStyle(0xffe066, 0.95);
+    g.fillCircle(24, 16, 3);
     g.generateTexture("prop-hearth", 48, 40);
     g.destroy();
   }
 
   if (!scene.textures.exists("prop-cottage")) {
     const g = scene.make.graphics({ x: 0, y: 0 });
-    g.fillStyle(0x4c3428, 1);
-    g.fillRect(10, 22, 28, 18);
-    g.fillStyle(0x80604a, 1);
-    g.fillRect(13, 24, 22, 14);
-    g.fillStyle(0x6e3028, 1);
-    g.fillTriangle(8, 22, 24, 6, 40, 22);
-    g.fillStyle(0x4a3828, 1);
-    g.fillRect(20, 28, 8, 12);
-    g.fillStyle(0xffcc88, 0.7);
-    g.fillRect(12, 26, 6, 5);
-    g.fillRect(30, 26, 4, 5);
-    g.lineStyle(1, 0xb07050, 0.55);
-    g.lineBetween(10, 22, 38, 22);
+    g.fillStyle(OUTLINE, 1);
+    g.fillRoundedRect(9, 21, 30, 20, 3);
+    g.fillStyle(0xc89068, 1);
+    g.fillRoundedRect(10, 22, 28, 18, 2);
+    g.fillStyle(0xe8b888, 1);
+    g.fillRoundedRect(13, 24, 22, 14, 2);
+    g.fillStyle(OUTLINE, 1);
+    g.fillTriangle(7, 22, 24, 5, 41, 22);
+    g.fillStyle(0xe86858, 1);
+    g.fillTriangle(9, 22, 24, 7, 39, 22);
+    g.fillStyle(0x6a4838, 1);
+    g.fillRoundedRect(20, 28, 8, 12, 2);
+    g.fillStyle(0xffe8a0, 0.9);
+    g.fillRoundedRect(12, 26, 6, 5, 1);
+    g.fillRoundedRect(30, 26, 5, 5, 1);
     g.generateTexture("prop-cottage", 48, 44);
     g.destroy();
   }
 
   if (!scene.textures.exists("prop-gate")) {
     const g = scene.make.graphics({ x: 0, y: 0 });
-    g.fillStyle(0x402c22, 1);
-    g.fillRect(8, 8, 6, 32);
-    g.fillRect(34, 8, 6, 32);
-    g.fillRect(8, 6, 32, 6);
-    g.fillStyle(0x855e3d, 1);
-    g.fillRect(10, 10, 2, 28);
-    g.fillRect(36, 10, 2, 28);
-    g.fillStyle(0x4a9a5a, 0.65);
-    g.fillRect(14, 12, 20, 24);
-    g.lineStyle(1, 0xc28a58, 0.55);
-    g.lineBetween(14, 16, 34, 28);
+    g.fillStyle(OUTLINE, 1);
+    g.fillRoundedRect(7, 7, 8, 34, 2);
+    g.fillRoundedRect(33, 7, 8, 34, 2);
+    g.fillRoundedRect(7, 5, 34, 8, 3);
+    g.fillStyle(0xc88858, 1);
+    g.fillRoundedRect(8, 8, 6, 32, 2);
+    g.fillRoundedRect(34, 8, 6, 32, 2);
+    g.fillRoundedRect(8, 6, 32, 6, 2);
+    g.fillStyle(0x68d878, 0.85);
+    g.fillRoundedRect(14, 12, 20, 24, 3);
+    g.lineStyle(2, 0xffe0a0, 0.7);
+    g.lineBetween(16, 16, 32, 28);
     g.generateTexture("prop-gate", 48, 42);
     g.destroy();
   }
 
   if (!scene.textures.exists("prop-gate-locked")) {
     const g = scene.make.graphics({ x: 0, y: 0 });
-    g.fillStyle(0x402c22, 1);
-    g.fillRect(8, 8, 6, 32);
-    g.fillRect(34, 8, 6, 32);
-    g.fillRect(8, 6, 32, 6);
-    g.fillStyle(0x855e3d, 1);
-    g.fillRect(10, 10, 2, 28);
-    g.fillRect(36, 10, 2, 28);
-    g.fillStyle(0x8b3a3a, 0.75);
-    g.fillRect(14, 12, 20, 24);
-    g.lineStyle(2, 0x5a2020, 0.9);
-    g.strokeRect(14, 12, 20, 24);
+    g.fillStyle(OUTLINE, 1);
+    g.fillRoundedRect(7, 7, 8, 34, 2);
+    g.fillRoundedRect(33, 7, 8, 34, 2);
+    g.fillRoundedRect(7, 5, 34, 8, 3);
+    g.fillStyle(0xc88858, 1);
+    g.fillRoundedRect(8, 8, 6, 32, 2);
+    g.fillRoundedRect(34, 8, 6, 32, 2);
+    g.fillRoundedRect(8, 6, 32, 6, 2);
+    g.fillStyle(0xe86868, 0.9);
+    g.fillRoundedRect(14, 12, 20, 24, 3);
+    g.lineStyle(2, 0x7a2020, 0.95);
+    g.strokeRoundedRect(14, 12, 20, 24, 3);
     g.generateTexture("prop-gate-locked", 48, 42);
     g.destroy();
   }
 
   if (!scene.textures.exists("floor-path")) {
     const g = scene.make.graphics({ x: 0, y: 0 });
-    drawSquareTile(g, TILE_WIDTH, TILE_HEIGHT, 0xc8b898, 0x9a8868);
-    g.fillStyle(0xd8c8a8, 0.5);
-    g.fillRect(8, TILE_HEIGHT / 2 - 2, TILE_WIDTH - 16, 4);
+    drawSquareTile(g, TILE_WIDTH, TILE_HEIGHT, 0xe0d0a8, 0xb09870);
+    g.fillStyle(0xf0e4c0, 0.55);
+    g.fillRoundedRect(8, TILE_HEIGHT / 2 - 3, TILE_WIDTH - 16, 6, 2);
     g.generateTexture("floor-path", TILE_WIDTH, TILE_HEIGHT);
-    g.destroy();
-  }
-}
-
-function generatePlayerTextures(scene: Phaser.Scene): void {
-  const dirs = ["south", "north", "east", "west"] as const;
-  for (const dir of dirs) {
-    const key = `player-${dir}`;
-    if (scene.textures.exists(key)) {
-      continue;
-    }
-    const g = scene.make.graphics({ x: 0, y: 0 });
-    g.fillStyle(0x000000, 0.28);
-    g.fillEllipse(16, 35, 20, 5);
-    g.fillStyle(0x2b1f36, 1);
-    g.fillRect(10, 20, 12, 13);
-    g.fillStyle(0x5b3c72, 1);
-    g.fillTriangle(8, 31, 11, 14, 22, 14);
-    g.fillTriangle(22, 14, 25, 31, 10, 31);
-    g.fillStyle(0x82609b, 0.8);
-    g.fillTriangle(11, 27, 16, 17, 19, 29);
-    g.fillStyle(0xc69b78, 1);
-    g.fillCircle(16, 12, 6);
-    g.fillStyle(0x302238, 1);
-    g.fillCircle(16, 10, 8);
-    g.fillStyle(0x6c4c83, 1);
-    g.fillCircle(16, 9, 6);
-    g.fillStyle(0x24192e, 1);
-    g.fillRect(13, 11, 6, 4);
-    g.fillStyle(0xb89262, 0.9);
-    g.fillCircle(15, 13, 1);
-    g.fillStyle(0x6b482e, 1);
-    g.fillRect(25, 14, 2, 19);
-    g.fillCircle(26, 13, 2);
-    g.fillStyle(0x9b6a3f, 1);
-    g.fillRect(20, 22, 5, 7);
-    if (dir === "north") {
-      g.fillStyle(0x3d294e, 1);
-      g.fillTriangle(9, 30, 16, 13, 23, 30);
-      g.fillStyle(0x21172c, 1);
-      g.fillCircle(16, 10, 8);
-    } else if (dir === "east") {
-      g.fillStyle(0x765094, 1);
-      g.fillTriangle(15, 30, 17, 15, 25, 29);
-      g.fillStyle(0xc69b78, 1);
-      g.fillCircle(19, 12, 5);
-    } else if (dir === "west") {
-      g.fillStyle(0x765094, 1);
-      g.fillTriangle(7, 29, 15, 15, 17, 30);
-      g.fillStyle(0xc69b78, 1);
-      g.fillCircle(13, 12, 5);
-    }
-    g.generateTexture(key, 32, 38);
     g.destroy();
   }
 }
@@ -467,7 +456,6 @@ export function ensureWorldTextures(scene: Phaser.Scene, zoneId: ZoneId): void {
   removeStaleTextures(scene, zoneId);
   generateWallTextures(scene);
   generatePropTextures(scene);
-  generatePlayerTextures(scene);
   generateFloorTextures(scene, zoneId);
 }
 

@@ -10,7 +10,7 @@ body,
   width: 100%;
   height: 100%;
   overflow: hidden;
-  background: #1a1a2e;
+  background: #b9e4df;
 }
 
 #app {
@@ -44,11 +44,10 @@ body,
   flex: 0 0 auto;
   margin-top: 8px;
   padding: 12px 14px;
-  background:
-    linear-gradient(135deg, #2b2034 0%, #171323 68%);
-  border: 2px solid #654461;
-  border-radius: 8px;
-  box-shadow: inset 0 0 0 1px #a5847644, 0 5px 16px #08060d88;
+  background: linear-gradient(135deg, #fff8df 0%, #d9f2e6 100%);
+  border: 3px solid #438b82;
+  border-radius: 18px;
+  box-shadow: inset 0 0 0 2px #ffffff99, 0 6px 16px #39796a55;
   font-family: "Source Sans 3", sans-serif;
   overflow: hidden;
 }
@@ -64,7 +63,7 @@ body,
 }
 
 .status-zone {
-  color: #f0e6d2;
+  color: #254d5a;
   font-family: Fraunces, serif;
   font-size: 18px;
   font-weight: 700;
@@ -72,36 +71,36 @@ body,
 }
 
 .status-quest {
-  color: #e8d8a0;
+  color: #356c63;
   font-size: 13px;
   font-weight: 600;
-  border-left: 2px solid #a87c55;
+  border-left: 3px solid #efad57;
   padding-left: 8px;
 }
 
 .status-quest-hint {
-  color: #d0c090;
+  color: #6b8c7b;
   font-size: 12px;
   font-style: italic;
 }
 
 .status-gate {
-  color: #c8b8a0;
+  color: #4b796e;
   font-size: 13px;
 }
 
 .status-party {
-  color: #d8e8c0;
+  color: #2c6577;
   font-size: 13px;
 }
 
 .status-materials {
-  color: #c8b8e8;
+  color: #5b4f8c;
   font-size: 13px;
 }
 
 .status-session {
-  color: #a8c8e8;
+  color: #4d879d;
   font-size: 12px;
 }
 
@@ -112,22 +111,22 @@ body,
 }
 
 .status-reset-btn {
-  border: 1px solid #6a4a4a;
-  background: #2a1818;
-  color: #e8b0b0;
+  border: 2px solid #bd7059;
+  background: #fff0d4;
+  color: #9a493d;
   font-family: "Source Sans 3", sans-serif;
   font-size: 12px;
   padding: 6px 12px;
-  border-radius: 4px;
+  border-radius: 999px;
   cursor: pointer;
 }
 
 .status-reset-btn:hover {
-  background: #3a2020;
-  border-color: #8a5a5a;
+  background: #ffe0c4;
+  border-color: #a95547;
 }
 
 .status-reset-btn:focus-visible {
-  outline: 2px solid #c8a0a0;
+  outline: 3px solid #efad57;
   outline-offset: 2px;
 }

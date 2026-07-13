@@ -24,11 +24,11 @@ import { recordQuestEvent } from "../story/questProgress";
 import { notifyWorldChanged } from "../world/worldSaveSchedule";
 import { isVisitorMode } from "../world/worldSession";
 
-const MOON_PANEL = 0x2a2440;
-const MOON_STROKE = 0xc8b8e8;
-const MOON_ACCENT = 0x8a7aa8;
-const MOON_TEXT = "#e8dff8";
-const MOON_MUTED = "#b8a8d0";
+const MOON_PANEL = 0x354d78;
+const MOON_STROKE = 0xffedb0;
+const MOON_ACCENT = 0x8ed8cf;
+const MOON_TEXT = "#fff8dc";
+const MOON_MUTED = "#c9eee1";
 const PANEL_WIDTH = 480;
 const PANEL_HEIGHT = 420;
 
@@ -61,7 +61,7 @@ export class ShrineScene extends Phaser.Scene {
     this.selectedItemId = null;
 
     this.add
-      .rectangle(0, 0, this.scale.width, this.scale.height, 0x0a0818, 0.82)
+      .rectangle(0, 0, this.scale.width, this.scale.height, 0x153051, 0.76)
       .setOrigin(0)
       .setInteractive();
 
@@ -142,7 +142,7 @@ export class ShrineScene extends Phaser.Scene {
     this.add
       .text(cx, closeY, "Close", {
         color: "#1a1a2e",
-        backgroundColor: "#c8b8e8",
+        backgroundColor: "#ffedb0",
         fontFamily: "system-ui, sans-serif",
         fontSize: "14px",
         padding: { x: 14, y: 6 },
@@ -226,7 +226,7 @@ export class ShrineScene extends Phaser.Scene {
         .text(x, y, tab.label, {
           color: this.activeTab === tab.id ? "#1a1a2e" : MOON_TEXT,
           backgroundColor:
-            this.activeTab === tab.id ? "#f0e2ff" : "#38294f",
+            this.activeTab === tab.id ? "#ffedb0" : "#42658d",
           fontFamily: "Source Sans 3, sans-serif",
           fontSize: "15px",
           padding: { x: 18, y: 9 },
@@ -251,7 +251,7 @@ export class ShrineScene extends Phaser.Scene {
     this.tabButtons.forEach((btn, i) => {
       const active = this.activeTab === ids[i];
       btn.setColor(active ? "#1a1a2e" : MOON_TEXT);
-      btn.setBackgroundColor(active ? "#f0e2ff" : "#38294f");
+      btn.setBackgroundColor(active ? "#ffedb0" : "#42658d");
       btn.setText(labels[i]);
     });
   }

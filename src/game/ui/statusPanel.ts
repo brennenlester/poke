@@ -14,7 +14,7 @@ function defaultSessionText(): string {
 }
 
 function defaultSessionColor(): string {
-  return isVisitorMode() ? "#a8a8c8" : "#a8c8e8";
+  return isVisitorMode() ? "#a8a8c8" : "#4d879d";
 }
 
 export function updateStatusPanel(zone: ZoneDefinition): void {

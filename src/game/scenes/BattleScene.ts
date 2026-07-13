@@ -6,6 +6,7 @@ import {
   playerParty,
 } from "../creatures/party";
 import { ensureCreatureTextures } from "../creatures/sprites";
+import { ensurePlayerAnims } from "../render/playerAnims";
 import type { BattleCombatant, MoveDefinition } from "../creatures/types";
 import {
   applyDamage,
@@ -106,6 +107,8 @@ export class BattleScene extends Phaser.Scene {
   create(): void {
     this.scene.bringToTop();
     ensureCreatureTextures(this);
+    ensurePlayerAnims(this);
+    this.cameras.main.fadeIn(140, 255, 255, 255);
 
     this.drawArena();
 
@@ -113,7 +116,7 @@ export class BattleScene extends Phaser.Scene {
 
     this.add
       .text(cx, 40, "Training Spar", {
-        color: "#f0e6d2",
+        color: "#fff7d8",
         fontFamily: "system-ui, sans-serif",
         fontSize: "22px",
       })
@@ -121,11 +124,11 @@ export class BattleScene extends Phaser.Scene {
 
     this.wildSprite = this.add
       .image(cx + 116, 142, getCreatureDefinition(this.wildCreatureId).spriteKey)
-      .setScale(1.55)
+      .setScale(1.8)
       .setDepth(2);
     this.playerSprite = this.add
       .image(cx - 118, 238, this.getPlayerSpriteKey())
-      .setScale(1.55)
+      .setScale(1.8)
       .setDepth(2);
 
     this.wildHpText = this.add.text(cx + 18, 72, "", {
@@ -161,25 +164,27 @@ export class BattleScene extends Phaser.Scene {
     const w = this.scale.width;
     const h = this.scale.height;
     const g = this.add.graphics().setDepth(-10);
-    g.fillStyle(0x120d1d, 1);
+    g.fillStyle(0x5da9c8, 1);
     g.fillRect(0, 0, w, h);
-    g.fillStyle(0x312347, 0.8);
-    g.fillCircle(w * 0.72, 82, 58);
-    g.fillStyle(0xe0d5f0, 0.26);
-    g.fillCircle(w * 0.72, 74, 34);
-    g.fillStyle(0x1c382c, 1);
+    g.fillStyle(0xffeaa0, 0.72);
+    g.fillCircle(w * 0.74, 70, 48);
+    g.fillStyle(0xd6f5e0, 0.48);
+    g.fillEllipse(w * 0.3, 92, 150, 34);
+    g.fillStyle(0x4f9a6e, 1);
     for (let x = -40; x < w + 50; x += 54) {
-      g.fillTriangle(x, 300, x + 28, 180 + ((x / 54) % 2) * 22, x + 56, 300);
+      g.fillTriangle(x, 300, x + 28, 190 + ((x / 54) % 2) * 22, x + 56, 300);
     }
-    g.fillStyle(0x243f30, 0.78);
+    g.fillStyle(0xa5d87d, 0.9);
     g.fillEllipse(w / 2, 244, w * 0.82, 82);
-    g.lineStyle(2, 0x8d76a8, 0.35);
+    g.fillStyle(0xe5f1ad, 0.75);
+    g.fillEllipse(w / 2, 244, w * 0.58, 44);
+    g.lineStyle(3, 0x3d8b76, 0.55);
     g.strokeEllipse(w / 2, 244, w * 0.74, 62);
   }
 
   private getPlayerSpriteKey(): string {
     if (this.partyInstanceIndex < 0) {
-      return "player-south";
+      return "player-south-0";
     }
     return getCreatureDefinition(
       playerParty.creatures[this.partyInstanceIndex].definitionId,
@@ -257,15 +262,18 @@ export class BattleScene extends Phaser.Scene {
   ): Phaser.GameObjects.Text {
     const btn = this.add
       .text(x, y, label, {
-        color: "#1a1a2e",
-        backgroundColor: "#c8dce8",
-        fontFamily: "system-ui, sans-serif",
+        color: "#1a3040",
+        backgroundColor: "#dff4ec",
+        fontFamily: "Source Sans 3, system-ui, sans-serif",
         fontSize: "16px",
-        padding: { x: 16, y: 8 },
+        fontStyle: "bold",
+        padding: { x: 18, y: 9 },
       })
       .setOrigin(0.5)
       .setInteractive({ useHandCursor: true });
 
+    btn.on("pointerover", () => btn.setAlpha(0.88));
+    btn.on("pointerout", () => btn.setAlpha(1));
     btn.on("pointerdown", onClick);
     return btn;
   }
@@ -294,15 +302,16 @@ export class BattleScene extends Phaser.Scene {
     const panelY = this.scale.height / 2;
 
     const panel = this.add
-      .rectangle(cx, panelY, 320, 220, 0x2a2a3e, 0.98)
-      .setStrokeStyle(2, 0xf0e6d2);
+      .rectangle(cx, panelY, 320, 220, 0xfff8ec, 0.98)
+      .setStrokeStyle(3, 0x6eb8a8);
     this.switchMenuObjects.push(panel);
 
     const title = this.add
       .text(cx, panelY - 90, "Choose a creature", {
-        color: "#f0e6d2",
-        fontFamily: "system-ui, sans-serif",
+        color: "#2a4050",
+        fontFamily: "Source Sans 3, system-ui, sans-serif",
         fontSize: "16px",
+        fontStyle: "bold",
       })
       .setOrigin(0.5);
     this.switchMenuObjects.push(title);
@@ -322,9 +331,9 @@ export class BattleScene extends Phaser.Scene {
 
       const btn = this.add
         .text(cx, rowY, label, {
-          color: fainted || isActive ? "#888888" : "#1a1a2e",
-          backgroundColor: fainted || isActive ? "#4a4a5a" : "#f0e6d2",
-          fontFamily: "system-ui, sans-serif",
+          color: fainted || isActive ? "#7a8890" : "#1a3040",
+          backgroundColor: fainted || isActive ? "#d8e0e4" : "#c8efe0",
+          fontFamily: "Source Sans 3, system-ui, sans-serif",
           fontSize: "14px",
           padding: { x: 10, y: 6 },
         })
@@ -614,9 +623,12 @@ export class BattleScene extends Phaser.Scene {
     notifyWorldChanged();
 
     this.time.delayedCall(1800, () => {
-      this.scene.stop("BattleScene");
-      this.scene.stop("EncounterScene");
-      this.scene.resume("IsometricScene");
+      this.cameras.main.fadeOut(140, 255, 255, 255);
+      this.time.delayedCall(145, () => {
+        this.scene.stop("BattleScene");
+        this.scene.stop("EncounterScene");
+        this.scene.resume("IsometricScene");
+      });
     });
   }
 }
