@@ -17,9 +17,13 @@ const PROP_KEYS = [
 
 /** Queue Imagine-backed PNGs. Missing files fall through to procedural ensure* helpers. */
 export function preloadImagineAssets(scene: Phaser.Scene): void {
-  // Only idle facings — walk PNGs were inconsistent outfits and caused anim flashes.
   for (const facing of FACINGS) {
-    scene.load.image(`player-${facing}-0`, `assets/player/player-${facing}-0.png`);
+    for (const frame of [0, 1, 2] as const) {
+      scene.load.image(
+        `player-${facing}-${frame}`,
+        `assets/player/player-${facing}-${frame}.png`,
+      );
+    }
   }
 
   for (const creature of CREATURES) {

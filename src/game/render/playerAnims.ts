@@ -92,8 +92,7 @@ function generateFrame(scene: Phaser.Scene, facing: Facing, frame: number): void
 }
 
 /**
- * Imagine walk PNGs drift into different outfits/faces per frame.
- * Derive walk frames from the idle texture with a clear stride pose.
+ * Fallback when Imagine walk frames are missing: derive stride poses from idle.
  */
 function deriveWalkFramesFromIdle(scene: Phaser.Scene, facing: Facing): void {
   const idleKey = textureKey(facing, 0);
@@ -107,7 +106,6 @@ function deriveWalkFramesFromIdle(scene: Phaser.Scene, facing: Facing): void {
   const width = source.width || FRAME_WIDTH;
   const height = source.height || FRAME_HEIGHT;
 
-  // Offsets are in source pixels; ~8–10px on-screen after downscale to 48×64.
   const stepX = Math.max(10, Math.round(width * 0.06));
   const stepY = Math.max(14, Math.round(height * 0.07));
   const poses: Record<number, { x: number; y: number; rot: number; squash: number }> = {
@@ -118,7 +116,7 @@ function deriveWalkFramesFromIdle(scene: Phaser.Scene, facing: Facing): void {
   for (const frame of [1, 2] as const) {
     const key = textureKey(facing, frame);
     if (scene.textures.exists(key)) {
-      scene.textures.remove(key);
+      continue;
     }
     const canvas = document.createElement("canvas");
     canvas.width = width;
@@ -130,7 +128,6 @@ function deriveWalkFramesFromIdle(scene: Phaser.Scene, facing: Facing): void {
     const pose = poses[frame];
     ctx.clearRect(0, 0, width, height);
     ctx.save();
-    // Pivot near the feet so lean/squash reads as a step.
     ctx.translate(width / 2 + pose.x, height * 0.92 + pose.y);
     ctx.rotate(pose.rot);
     ctx.scale(1, pose.squash);
@@ -146,20 +143,20 @@ export function getPlayerIdleTextureKey(facing: Facing = "south"): string {
 
 export function ensurePlayerAnims(scene: Phaser.Scene): void {
   for (const facing of FACINGS) {
-    // Prefer Imagine idle; fill gaps procedurally, then derive walk from idle.
+    // Prefer Imagine idle + walk frames; procedural / derived only for gaps.
     generateFrame(scene, facing, 0);
-    if (scene.textures.exists(textureKey(facing, 0))) {
-      const src = scene.textures.get(textureKey(facing, 0)).getSourceImage() as {
-        width?: number;
-      };
-      // Idle from Imagine is large; walk PNGs are inconsistent — always derive.
-      if (src.width && src.width > FRAME_WIDTH) {
-        deriveWalkFramesFromIdle(scene, facing);
-      } else {
-        generateFrame(scene, facing, 1);
-        generateFrame(scene, facing, 2);
+    const hasImagineWalk =
+      scene.textures.exists(textureKey(facing, 1)) &&
+      scene.textures.exists(textureKey(facing, 2));
+    if (!hasImagineWalk) {
+      if (scene.textures.exists(textureKey(facing, 0))) {
+        const src = scene.textures.get(textureKey(facing, 0)).getSourceImage() as {
+          width?: number;
+        };
+        if (src.width && src.width > FRAME_WIDTH) {
+          deriveWalkFramesFromIdle(scene, facing);
+        }
       }
-    } else {
       generateFrame(scene, facing, 1);
       generateFrame(scene, facing, 2);
     }
@@ -175,7 +172,6 @@ export function ensurePlayerAnims(scene: Phaser.Scene): void {
     }
 
     const walkKey = `player-walk-${facing}`;
-    // Recreate walk anim so it picks up derived frames after a hot reload.
     if (scene.anims.exists(walkKey)) {
       scene.anims.remove(walkKey);
     }

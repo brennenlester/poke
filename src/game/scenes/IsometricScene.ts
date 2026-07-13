@@ -101,7 +101,6 @@ export class IsometricScene extends Phaser.Scene {
   private layoutLocked = false;
   private isMoving = false;
   private playerBaseY = 0;
-  private walkPhase = 0;
 
   constructor() {
     super({ key: "IsometricScene" });
@@ -198,14 +197,12 @@ export class IsometricScene extends Phaser.Scene {
 
     if (dx === 0 && dy === 0) {
       this.isMoving = false;
-      this.walkPhase = 0;
       this.playPlayerAnimation();
       this.syncPlayerToGrid();
       return;
     }
 
     this.isMoving = true;
-    this.walkPhase += delta;
     this.updateFacing(dx, dy);
     this.playPlayerAnimation();
 
@@ -706,12 +703,8 @@ export class IsometricScene extends Phaser.Scene {
     const screen = this.toScreen(this.playerGridX, this.playerGridY);
 
     this.playerBaseY = screen.y + TILE_HEIGHT / 2 - 2;
-    // Visible stride bob while moving (Imagine walk frames stay design-locked).
-    const bob = this.isMoving
-      ? Math.abs(Math.sin(this.walkPhase / 85)) * 5
-      : 0;
-    const sway = this.isMoving ? Math.sin(this.walkPhase / 85) * 2 : 0;
-    this.player.setPosition(screen.x + sway, this.playerBaseY - bob);
+    // Walk motion comes from Imagine frame anims — no bob/lean position hacks.
+    this.player.setPosition(screen.x, this.playerBaseY);
     this.player.setDepth(PLAYER_DEPTH);
   }
 
