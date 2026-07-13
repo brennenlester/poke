@@ -528,6 +528,7 @@ export class BattleScene extends Phaser.Scene {
     this.refreshHp();
     this.playerSprite.setTexture(this.getPlayerSpriteKey());
     fitDisplay(this.playerSprite, this.getPlayerBattleDisplay());
+    this.syncPlayerBattleFacing();
     this.log(`${this.player.name} steps up to fight!`);
     this.buildActionButtons();
     this.waitingForPlayer = true;
@@ -552,6 +553,7 @@ export class BattleScene extends Phaser.Scene {
     this.refreshHp();
     this.playerSprite.setTexture(this.getPlayerSpriteKey());
     fitDisplay(this.playerSprite, this.getPlayerBattleDisplay());
+    this.syncPlayerBattleFacing();
     this.log(`Go, ${this.player.name}!`);
     this.buildActionButtons();
 
