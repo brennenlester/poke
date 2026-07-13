@@ -43,9 +43,40 @@ export const ZONE_PROPS: Partial<Record<ZoneId, ZoneProp[]>> = {
     { x: 3, y: 6, kind: "fern" },
   ],
   overworld: [
+    // South approach (village gate)
+    { x: 6, y: 12, kind: "fern" },
+    { x: 8, y: 12, kind: "fern" },
+    { x: 5, y: 11, kind: "pebble-pile" },
+    { x: 9, y: 11, kind: "standing-stone" },
+    // Central meadow
     { x: 4, y: 5, kind: "tree" },
-    { x: 10, y: 8, kind: "tree" },
-    { x: 7, y: 11, kind: "fern" },
+    { x: 7, y: 4, kind: "tree" },
+    { x: 10, y: 5, kind: "tree" },
+    { x: 5, y: 7, kind: "fern" },
+    { x: 9, y: 7, kind: "fern" },
+    { x: 7, y: 8, kind: "standing-stone" },
+    { x: 3, y: 8, kind: "pebble-pile" },
+    { x: 11, y: 8, kind: "pebble-pile" },
+    // East path toward Mistwood
+    { x: 12, y: 6, kind: "tree" },
+    { x: 12, y: 8, kind: "fern" },
+    { x: 11, y: 4, kind: "standing-stone" },
+  ],
+  mistwood: [
+    { x: 2, y: 5, kind: "tree" },
+    { x: 2, y: 7, kind: "tree" },
+    { x: 4, y: 3, kind: "tree" },
+    { x: 6, y: 2, kind: "tree" },
+    { x: 8, y: 3, kind: "tree" },
+    { x: 9, y: 5, kind: "tree" },
+    { x: 9, y: 8, kind: "tree" },
+    { x: 5, y: 5, kind: "standing-stone" },
+    { x: 7, y: 6, kind: "standing-stone" },
+    { x: 4, y: 8, kind: "fern" },
+    { x: 6, y: 9, kind: "fern" },
+    { x: 8, y: 7, kind: "fern" },
+    { x: 3, y: 4, kind: "pebble-pile" },
+    { x: 7, y: 4, kind: "pebble-pile" },
   ],
 };
 

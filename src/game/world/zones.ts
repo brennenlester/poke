@@ -72,16 +72,35 @@ const VILLAGE: ZoneDefinition = {
   ],
 };
 
+/** Folklore Fields — first unlocked overworld region (south back to village). */
 const OVERWORLD: ZoneDefinition = {
   id: "overworld",
-  name: "Folklore Overworld",
+  name: "Folklore Fields",
   width: 15,
   height: 15,
-  tiles: borderedFloor(15, 15, [{ x: 7, y: 14 }]),
+  tiles: borderedFloor(15, 15, [
+    { x: 7, y: 14 },
+    { x: 14, y: 7 },
+  ]),
   lightTint: 0xc8dce8,
   darkTint: 0x6a8aa0,
   transitions: [
     { x: 7, y: 14, targetZone: "village", targetX: 5, targetY: 1 },
+    { x: 14, y: 7, targetZone: "mistwood", targetX: 1, targetY: 6 },
+  ],
+};
+
+/** Mistwood Reach — second overworld region, mist-heavy late encounters. */
+const MISTWOOD: ZoneDefinition = {
+  id: "mistwood",
+  name: "Mistwood Reach",
+  width: 12,
+  height: 12,
+  tiles: borderedFloor(12, 12, [{ x: 0, y: 6 }]),
+  lightTint: 0xd4c8e8,
+  darkTint: 0x7a6a98,
+  transitions: [
+    { x: 0, y: 6, targetZone: "overworld", targetX: 13, targetY: 7 },
   ],
 };
 
@@ -90,6 +109,7 @@ export const ZONES: Record<ZoneId, ZoneDefinition> = {
   shrine: SHRINE,
   village: VILLAGE,
   overworld: OVERWORLD,
+  mistwood: MISTWOOD,
 };
 
 export const STARTING_ZONE_ID: ZoneId = "grove";

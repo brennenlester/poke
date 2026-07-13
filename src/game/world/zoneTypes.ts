@@ -1,4 +1,9 @@
-export type ZoneId = "grove" | "shrine" | "village" | "overworld";
+export type ZoneId =
+  | "grove"
+  | "shrine"
+  | "village"
+  | "overworld"
+  | "mistwood";
 
 export const TileType = {
   Wall: 0,
