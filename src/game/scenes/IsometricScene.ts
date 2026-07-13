@@ -287,7 +287,6 @@ export class IsometricScene extends Phaser.Scene {
     this.drawBackdrop(zone);
     this.drawZoneTiles(zone);
     this.drawProps(zone);
-    this.drawVignette();
     recordQuestEvent({ type: "enter_zone", zoneId });
 
     this.player = this.add
@@ -461,36 +460,6 @@ export class IsometricScene extends Phaser.Scene {
     }
     g.fillStyle(colors.mist, 0.22);
     g.fillCircle(bounds.minX + bounds.width * 0.72, bounds.minY + 80, 42);
-  }
-
-  private drawVignette(): void {
-    const w = this.scale.width;
-    const h = this.scale.height;
-    const g = this.add.graphics().setScrollFactor(0).setDepth(50_000);
-
-    // Soft feathered rings — each pixel painted once (no corner stacking).
-    const ring = 5;
-    const steps = 6;
-    for (let i = 0; i < steps; i++) {
-      const inset = i * ring;
-      const alpha = 0.09 * (1 - i / steps);
-      const thickness = ring;
-      g.fillStyle(0x120e1a, alpha);
-      g.fillRect(inset, inset, w - inset * 2, thickness);
-      g.fillRect(inset, h - inset - thickness, w - inset * 2, thickness);
-      g.fillRect(
-        inset,
-        inset + thickness,
-        thickness,
-        h - inset * 2 - thickness * 2,
-      );
-      g.fillRect(
-        w - inset - thickness,
-        inset + thickness,
-        thickness,
-        h - inset * 2 - thickness * 2,
-      );
-    }
   }
 
   private drawWalls(zone: ZoneDefinition): void {
