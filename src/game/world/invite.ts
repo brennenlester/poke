@@ -38,21 +38,42 @@ export function buildInviteUrl(
   return url.toString();
 }
 
-export function parseInviteFromUrl(): WorldSnapshot | null {
+export type InviteParseResult =
+  | { status: "absent" }
+  | { status: "invalid" }
+  | { status: "ok"; snapshot: WorldSnapshot };
+
+/** Distinguish missing vs broken `?join=` so callers can show an error screen. */
+export function parseInviteParam(): InviteParseResult {
   const encoded = new URLSearchParams(window.location.search).get("join");
-  if (!encoded) {
-    return null;
+  if (encoded === null) {
+    return { status: "absent" };
+  }
+  if (encoded.trim() === "") {
+    return { status: "invalid" };
   }
 
   try {
     const parsed = JSON.parse(fromBase64Url(encoded));
     if (!isValidWorldSnapshot(parsed)) {
-      return null;
+      return { status: "invalid" };
     }
-    return parsed;
+    return { status: "ok", snapshot: parsed };
   } catch {
-    return null;
+    return { status: "invalid" };
   }
+}
+
+export function parseInviteFromUrl(): WorldSnapshot | null {
+  const result = parseInviteParam();
+  return result.status === "ok" ? result.snapshot : null;
+}
+
+export function clearJoinParamAndReload(): void {
+  const url = new URL(window.location.href);
+  url.searchParams.delete("join");
+  const query = url.searchParams.toString();
+  window.location.replace(`${url.pathname}${query ? `?${query}` : ""}${url.hash}`);
 }
 
 export async function copyInviteLink(
