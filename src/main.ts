@@ -20,6 +20,20 @@ import {
 } from "./game/world/worldSave";
 import { setVisitorMode } from "./game/world/worldSession";
 
+function consumeNewParam(): void {
+  const url = new URL(window.location.href);
+  if (!url.searchParams.has("new")) {
+    return;
+  }
+  url.searchParams.delete("new");
+  const query = url.searchParams.toString();
+  window.history.replaceState(
+    {},
+    "",
+    `${url.pathname}${query ? `?${query}` : ""}${url.hash}`,
+  );
+}
+
 function showInvalidInviteScreen(): void {
   const overlay = document.getElementById("invite-error");
   const startFresh = document.getElementById("invite-error-start-fresh");
@@ -30,20 +44,23 @@ function showInvalidInviteScreen(): void {
   playfield?.setAttribute("hidden", "");
   overlay.hidden = false;
   startFresh.addEventListener("click", () => {
+    clearHostSave();
     clearJoinParamAndReload();
   });
 }
 
-const params = new URLSearchParams(window.location.search);
-if (params.has("new")) {
-  clearHostSave();
-}
-
 const inviteResult = parseInviteParam();
 if (inviteResult.status === "invalid") {
-  // Blocking error — do not boot host/visitor game or write quest progress.
+  // Blocking error — do not boot, clear saves, or write quest progress.
   showInvalidInviteScreen();
 } else {
+  const params = new URLSearchParams(window.location.search);
+  // Only honor ?new= when there is no broken invite claiming "nothing changed".
+  if (params.has("new")) {
+    clearHostSave();
+    consumeNewParam();
+  }
+
   if (inviteResult.status === "ok" && isValidWorldSnapshot(inviteResult.snapshot)) {
     suspendHostPersist();
     applyWorldSnapshot(inviteResult.snapshot);
