@@ -73,6 +73,7 @@ function playSfx(scene: Phaser.Scene, key: string, volume = 0.45): void {
 }
 
 export function playStepSfx(scene: Phaser.Scene, nowMs: number): void {
+  unlockAudioFromGesture(scene);
   if (nowMs - lastStepAt < STEP_COOLDOWN_MS) {
     return;
   }
@@ -97,10 +98,10 @@ export function playCraftSfx(scene: Phaser.Scene): void {
 }
 
 export function ensureGroveMusic(scene: Phaser.Scene): void {
-  if (!scene.cache.audio.exists(MUSIC_GROVE)) {
+  if (!unlocked || !scene.cache.audio.exists(MUSIC_GROVE)) {
     return;
   }
-  if (!music) {
+  if (!music || !music.active) {
     music = scene.sound.add(MUSIC_GROVE, {
       loop: true,
       volume: 0.22,

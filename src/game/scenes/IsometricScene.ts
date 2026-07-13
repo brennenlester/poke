@@ -2,7 +2,6 @@ import Phaser from "phaser";
 import {
   ensureGroveMusic,
   initMuteControl,
-  playEncounterSfx,
   playGatherSfx,
   playShrineSfx,
   playStepSfx,
@@ -293,7 +292,6 @@ export class IsometricScene extends Phaser.Scene {
 
     this.inEncounter = true;
     setTouchControlsEnabled(false);
-    playEncounterSfx(this);
     this.cameras.main.fadeOut(140, 255, 255, 255);
     this.time.delayedCall(145, () => {
       this.scene.pause();
