@@ -33,6 +33,12 @@ import {
   setInviteStatus,
   updateStatusPanel,
 } from "../ui/statusPanel";
+import {
+  consumeTouchInteract,
+  getTouchAxes,
+  initTouchControls,
+  setTouchControlsEnabled,
+} from "../ui/touchControls";
 import { canOccupy } from "../world/collision";
 import { copyInviteLink } from "../world/invite";
 import { takePendingWorldPosition } from "../world/worldSnapshot";
@@ -127,6 +133,7 @@ export class IsometricScene extends Phaser.Scene {
     this.unlockKey = this.input.keyboard!.addKey("U");
     this.inviteKey = this.input.keyboard!.addKey("I");
     this.interactKey = this.input.keyboard!.addKey("E");
+    initTouchControls();
 
     this.loadZone(this.currentZoneId);
 
@@ -136,6 +143,7 @@ export class IsometricScene extends Phaser.Scene {
       this.inEncounter = false;
       this.inShrine = false;
       this.travelSinceEncounter = 0;
+      setTouchControlsEnabled(true);
       const zoneId = this.currentZoneId;
       const x = this.playerGridX;
       const y = this.playerGridY;
@@ -172,7 +180,10 @@ export class IsometricScene extends Phaser.Scene {
 
     this.updateQuestToast();
 
-    if (Phaser.Input.Keyboard.JustDown(this.interactKey)) {
+    if (
+      Phaser.Input.Keyboard.JustDown(this.interactKey) ||
+      consumeTouchInteract()
+    ) {
       if (!this.tryShrineInteract()) {
         this.tryGatherInteract();
       }
@@ -196,6 +207,10 @@ export class IsometricScene extends Phaser.Scene {
     if (this.cursors.down.isDown || this.wasd.S.isDown) {
       dy += 1;
     }
+
+    const touch = getTouchAxes();
+    dx += touch.x;
+    dy += touch.y;
 
     if (dx === 0 && dy === 0) {
       this.isMoving = false;
@@ -263,6 +278,7 @@ export class IsometricScene extends Phaser.Scene {
     }
 
     this.inEncounter = true;
+    setTouchControlsEnabled(false);
     this.cameras.main.fadeOut(140, 255, 255, 255);
     this.time.delayedCall(145, () => {
       this.scene.pause();
@@ -627,6 +643,7 @@ export class IsometricScene extends Phaser.Scene {
       return false;
     }
     this.inShrine = true;
+    setTouchControlsEnabled(false);
     if (this.shrinePrompt) {
       this.shrinePrompt.destroy();
       this.shrinePrompt = undefined;
