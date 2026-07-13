@@ -148,6 +148,7 @@ export class BattleScene extends Phaser.Scene {
       this.add.image(cx - 118, 238, this.getPlayerSpriteKey()).setDepth(2),
       this.getPlayerBattleDisplay(),
     );
+    this.syncPlayerBattleFacing();
 
     this.wildHpText = this.add.text(cx + 18, 72, "", {
       color: "#f0e6d2",
@@ -230,6 +231,11 @@ export class BattleScene extends Phaser.Scene {
       playerParty.creatures[this.partyInstanceIndex].definitionId,
     ).spriteKey;
     return resolveCreaturePoseTexture(this, spriteKey, "battle");
+  }
+
+  /** Party creatures sit on the left; flip battle crops to face the opponent. */
+  private syncPlayerBattleFacing(): void {
+    this.playerSprite.setFlipX(this.partyInstanceIndex >= 0);
   }
 
   private getPlayerBattleDisplay(): {
