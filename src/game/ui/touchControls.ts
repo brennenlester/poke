@@ -8,6 +8,7 @@ let axes: TouchAxes = { x: 0, y: 0 };
 let interactQueued = false;
 let bound = false;
 let inputEnabled = true;
+let activePointerId: number | null = null;
 
 export function getTouchAxes(): TouchAxes {
   return axes;
@@ -22,15 +23,26 @@ export function consumeTouchInteract(): boolean {
   return true;
 }
 
+function placeKnob(knob: HTMLElement, pad: HTMLElement): void {
+  const max = pad.clientWidth / 2 - knob.clientWidth / 2;
+  knob.style.transform = `translate(${axes.x * max}px, ${axes.y * max}px)`;
+}
+
 export function setTouchControlsEnabled(enabled: boolean): void {
   inputEnabled = enabled;
   if (!enabled) {
     axes = { x: 0, y: 0 };
     interactQueued = false;
+    activePointerId = null;
   }
   const root = document.getElementById("touch-controls");
   if (root) {
     root.classList.toggle("touch-controls-disabled", !enabled);
+  }
+  const pad = document.getElementById("touch-stick-pad");
+  const knob = document.getElementById("touch-stick-knob");
+  if (pad && knob) {
+    placeKnob(knob, pad);
   }
 }
 
@@ -60,11 +72,6 @@ function clearAxes(): void {
   axes = { x: 0, y: 0 };
 }
 
-function placeKnob(knob: HTMLElement, pad: HTMLElement): void {
-  const max = pad.clientWidth / 2 - knob.clientWidth / 2;
-  knob.style.transform = `translate(${axes.x * max}px, ${axes.y * max}px)`;
-}
-
 /**
  * Bind once to #touch-controls. Safe to call when controls are absent (desktop).
  */
@@ -81,8 +88,6 @@ export function initTouchControls(): void {
   }
   bound = true;
 
-  let activePointerId: number | null = null;
-
   const onPadDown = (event: PointerEvent): void => {
     if (!inputEnabled) {
       return;
@@ -95,7 +100,7 @@ export function initTouchControls(): void {
   };
 
   const onPadMove = (event: PointerEvent): void => {
-    if (activePointerId !== event.pointerId) {
+    if (!inputEnabled || activePointerId !== event.pointerId) {
       return;
     }
     event.preventDefault();
