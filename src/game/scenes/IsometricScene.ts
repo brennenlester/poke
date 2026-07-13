@@ -10,6 +10,7 @@ import {
   getBoundaryTextureKey,
   getFloorTextureKey,
 } from "../render/worldTextures";
+import { ensurePlayerAnims } from "../render/playerAnims";
 import { rollWildCreature } from "../encounters/tables";
 import {
   consumeQuestToast,
@@ -56,10 +57,10 @@ const MOVE_SPEED = 6;
 const ENCOUNTER_TRAVEL_THRESHOLD = 0.75;
 const ENCOUNTER_CHANCE = 0.10;
 const ZONE_CAMERA_COLORS: Record<ZoneId, number> = {
-  grove: 0x18251c,
-  shrine: 0x211a32,
-  village: 0x352417,
-  overworld: 0x162738,
+  grove: 0x83c5a0,
+  shrine: 0x6c629e,
+  village: 0xf0b46e,
+  overworld: 0x78b9d8,
 };
 
 type Facing = "south" | "north" | "east" | "west";
@@ -69,7 +70,7 @@ export class IsometricScene extends Phaser.Scene {
   private playerGridX = 3;
   private playerGridY = 7;
   private playerFacing: Facing = "south";
-  private player!: Phaser.GameObjects.Image;
+  private player!: Phaser.GameObjects.Sprite;
   private cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
   private wasd!: {
     W: Phaser.Input.Keyboard.Key;
@@ -118,7 +119,7 @@ export class IsometricScene extends Phaser.Scene {
 
     this.loadZone(this.currentZoneId);
 
-    this.cameras.main.startFollow(this.player, true, 0.12, 0.12);
+    this.cameras.main.startFollow(this.player, true, 0.08, 0.08);
 
     this.events.on("resume", () => {
       this.inEncounter = false;
@@ -131,7 +132,7 @@ export class IsometricScene extends Phaser.Scene {
       this.playerGridX = x;
       this.playerGridY = y;
       this.syncPlayerToGrid();
-      this.cameras.main.startFollow(this.player, true, 0.12, 0.12);
+      this.cameras.main.startFollow(this.player, true, 0.08, 0.08);
     });
 
     this.scale.on("resize", () => this.onResize());
@@ -143,9 +144,9 @@ export class IsometricScene extends Phaser.Scene {
   }
 
   update(_time: number, delta: number): void {
-    this.updatePlayerBob(_time);
     if (this.inEncounter || this.inShrine) {
       this.isMoving = false;
+      this.playPlayerAnimation();
       return;
     }
     if (import.meta.env.DEV && Phaser.Input.Keyboard.JustDown(this.unlockKey)) {
@@ -186,11 +187,13 @@ export class IsometricScene extends Phaser.Scene {
 
     if (dx === 0 && dy === 0) {
       this.isMoving = false;
+      this.playPlayerAnimation();
       return;
     }
 
     this.isMoving = true;
     this.updateFacing(dx, dy);
+    this.playPlayerAnimation();
 
     const length = Math.hypot(dx, dy);
     dx /= length;
@@ -224,7 +227,6 @@ export class IsometricScene extends Phaser.Scene {
     }
     if (facing !== this.playerFacing) {
       this.playerFacing = facing;
-      this.player.setTexture(`player-${facing}`);
     }
   }
 
@@ -248,8 +250,11 @@ export class IsometricScene extends Phaser.Scene {
     }
 
     this.inEncounter = true;
-    this.scene.pause();
-    this.scene.launch("EncounterScene", { creatureId });
+    this.cameras.main.fadeOut(140, 255, 255, 255);
+    this.time.delayedCall(145, () => {
+      this.scene.pause();
+      this.scene.launch("EncounterScene", { creatureId });
+    });
   }
 
   private tryZoneTransition(zone: ZoneDefinition): void {
@@ -281,6 +286,7 @@ export class IsometricScene extends Phaser.Scene {
     this.shrinePrompt = undefined;
 
     ensureWorldTextures(this, zoneId);
+    ensurePlayerAnims(this);
     this.worldOrigin = this.getZoneWorldOrigin(zone);
     this.cameras.main.setBackgroundColor(ZONE_CAMERA_COLORS[zoneId]);
 
@@ -290,10 +296,12 @@ export class IsometricScene extends Phaser.Scene {
     recordQuestEvent({ type: "enter_zone", zoneId });
 
     this.player = this.add
-      .image(0, 0, `player-${this.playerFacing}`)
+      .sprite(0, 0, `player-${this.playerFacing}-0`)
       .setOrigin(0.5, 1);
     this.syncPlayerToGrid();
-    this.cameras.main.startFollow(this.player, true, 0.12, 0.12);
+    this.playPlayerAnimation();
+    this.cameras.main.startFollow(this.player, true, 0.08, 0.08);
+    this.cameras.main.fadeIn(180, 255, 255, 255);
     this.time.delayedCall(0, () => {
       this.layoutPlayfield(zone);
       this.updateInteractPrompt();
@@ -442,10 +450,10 @@ export class IsometricScene extends Phaser.Scene {
 
   private drawBackdrop(zone: ZoneDefinition): void {
     const palette: Record<ZoneId, { sky: number; hill: number; mist: number }> = {
-      grove: { sky: 0x5c8660, hill: 0x31543a, mist: 0xb4d49a },
-      shrine: { sky: 0x594b7b, hill: 0x30254d, mist: 0xd9c9ed },
-      village: { sky: 0xb07a54, hill: 0x694635, mist: 0xf0c58d },
-      overworld: { sky: 0x547b9d, hill: 0x2e5068, mist: 0xb5d8e2 },
+      grove: { sky: 0x8ed0a6, hill: 0x4d9270, mist: 0xe4f4bd },
+      shrine: { sky: 0x8881c8, hill: 0x4a4b8a, mist: 0xf0e4ff },
+      village: { sky: 0xf4b875, hill: 0xc9775a, mist: 0xffe5ad },
+      overworld: { sky: 0x80c5e8, hill: 0x4b8da8, mist: 0xd8f5ef },
     };
     const colors = palette[zone.id];
     const bounds = this.getZoneWorldBounds(zone);
@@ -665,13 +673,14 @@ export class IsometricScene extends Phaser.Scene {
     this.player.setDepth(PLAYER_DEPTH);
   }
 
-  private updatePlayerBob(time: number): void {
+  private playPlayerAnimation(): void {
     if (!this.player) {
       return;
     }
-    const speed = this.isMoving ? 0.016 : 0.004;
-    const height = this.isMoving ? 2 : 1;
-    this.player.y = this.playerBaseY + Math.sin(time * speed) * height;
+    const key = `player-${this.isMoving ? "walk" : "idle"}-${this.playerFacing}`;
+    if (this.player.anims.currentAnim?.key !== key) {
+      this.player.play(key);
+    }
   }
 
   private updateQuestToast(): void {
