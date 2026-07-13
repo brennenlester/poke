@@ -53,7 +53,7 @@ Host progress (party, inventory, quests, position, gate) lives in `localStorage`
 
 ## Development
 
-**Requirements:** Node.js 20+ and npm.
+**Requirements:** Node.js 20.9+ and npm.
 
 ```bash
 npm install
@@ -61,6 +61,7 @@ npm run dev      # http://localhost:5173
 npm test         # Vitest unit tests
 npm run build    # production build → dist/
 npm run preview  # serve dist locally
+npm run pack:atlas  # rebuild Imagine texture atlas after adding/replacing PNGs
 ```
 
 Pull requests to `main` run CI (`npm ci`, `npm test`, `npm run build`). Merges deploy via Vercel.
