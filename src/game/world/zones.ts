@@ -90,17 +90,35 @@ const OVERWORLD: ZoneDefinition = {
   ],
 };
 
-/** Mistwood Reach — second overworld region, mist-heavy late encounters. */
+/** Mistwood Reach — mist-heavy late encounters; east path to Emberfen. */
 const MISTWOOD: ZoneDefinition = {
   id: "mistwood",
   name: "Mistwood Reach",
   width: 12,
   height: 12,
-  tiles: borderedFloor(12, 12, [{ x: 0, y: 6 }]),
+  tiles: borderedFloor(12, 12, [
+    { x: 0, y: 6 },
+    { x: 11, y: 6 },
+  ]),
   lightTint: 0xd4c8e8,
   darkTint: 0x7a6a98,
   transitions: [
     { x: 0, y: 6, targetZone: "overworld", targetX: 13, targetY: 7 },
+    { x: 11, y: 6, targetZone: "emberfen", targetX: 1, targetY: 5 },
+  ],
+};
+
+/** Emberfen Hollow — warm peat fen; exclusive late creatures. */
+const EMBERFEN: ZoneDefinition = {
+  id: "emberfen",
+  name: "Emberfen Hollow",
+  width: 11,
+  height: 11,
+  tiles: borderedFloor(11, 11, [{ x: 0, y: 5 }]),
+  lightTint: 0xe8c090,
+  darkTint: 0xa86840,
+  transitions: [
+    { x: 0, y: 5, targetZone: "mistwood", targetX: 10, targetY: 6 },
   ],
 };
 
@@ -110,6 +128,7 @@ export const ZONES: Record<ZoneId, ZoneDefinition> = {
   village: VILLAGE,
   overworld: OVERWORLD,
   mistwood: MISTWOOD,
+  emberfen: EMBERFEN,
 };
 
 export const STARTING_ZONE_ID: ZoneId = "grove";

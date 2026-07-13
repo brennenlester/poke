@@ -19,7 +19,7 @@ A browser folklore RPG: explore isometric zones, befriend creatures, spar for ma
 
 ### Confined region
 
-Start in **Whisper Grove**, then walk map exits through **Moon Shrine** to **Hearth Crossing**. North of the village are **Folklore Fields** and connected **Mistwood Reach**, locked until Story quest 2 is complete.
+Start in **Whisper Grove**, then walk map exits through **Moon Shrine** to **Hearth Crossing**. North of the village are **Folklore Fields**, connected **Mistwood Reach**, and **Emberfen Hollow**, locked until Story quest 2 is complete.
 
 ### Story quests
 

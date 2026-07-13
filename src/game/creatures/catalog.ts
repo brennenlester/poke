@@ -156,6 +156,53 @@ export const CREATURES: CreatureDefinition[] = [
       { id: "warmth", name: "Warmth", power: 7 },
     ],
   },
+  {
+    id: "peat-sprite",
+    name: "Peat Sprite",
+    folkloreType: "fen",
+    maxHp: 28,
+    attack: 7,
+    defense: 6,
+    spriteKey: "creature-peat-sprite",
+    spriteColor: 0x8a6038,
+    early: false,
+    moves: [
+      { id: "mire", name: "Mire", power: 7 },
+      { id: "smolder", name: "Smolder", power: 9 },
+    ],
+  },
+  {
+    id: "cinder-toad",
+    name: "Cinder Toad",
+    folkloreType: "ember",
+    maxHp: 32,
+    attack: 8,
+    defense: 7,
+    spriteKey: "creature-cinder-toad",
+    spriteColor: 0xd06030,
+    early: false,
+    moves: [
+      { id: "hop", name: "Hop", power: 6 },
+      { id: "ember-spit", name: "Ember Spit", power: 11 },
+      { id: "ash", name: "Ash", power: 5 },
+    ],
+  },
+  {
+    id: "bog-lantern",
+    name: "Bog Lantern",
+    folkloreType: "will-o-wisp",
+    maxHp: 22,
+    attack: 10,
+    defense: 4,
+    spriteKey: "creature-bog-lantern",
+    spriteColor: 0xffc050,
+    early: false,
+    moves: [
+      { id: "lure", name: "Lure", power: 6 },
+      { id: "flare", name: "Flare", power: 10 },
+      { id: "drift", name: "Drift", power: 7 },
+    ],
+  },
 ];
 
 const byId = new Map(CREATURES.map((c) => [c.id, c]));

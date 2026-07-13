@@ -77,6 +77,22 @@ export const ZONE_PROPS: Partial<Record<ZoneId, ZoneProp[]>> = {
     { x: 8, y: 7, kind: "fern" },
     { x: 3, y: 4, kind: "pebble-pile" },
     { x: 7, y: 4, kind: "pebble-pile" },
+    // East path toward Emberfen
+    { x: 10, y: 5, kind: "fern" },
+    { x: 10, y: 7, kind: "pebble-pile" },
+  ],
+  emberfen: [
+    { x: 3, y: 3, kind: "tree" },
+    { x: 7, y: 3, kind: "tree" },
+    { x: 5, y: 2, kind: "standing-stone" },
+    { x: 2, y: 5, kind: "fern" },
+    { x: 4, y: 6, kind: "fern" },
+    { x: 6, y: 5, kind: "fern" },
+    { x: 8, y: 6, kind: "tree" },
+    { x: 3, y: 8, kind: "standing-stone" },
+    { x: 7, y: 8, kind: "pebble-pile" },
+    { x: 5, y: 7, kind: "pebble-pile" },
+    { x: 8, y: 4, kind: "standing-stone" },
   ],
 };
 

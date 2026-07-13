@@ -3,7 +3,8 @@ export type ZoneId =
   | "shrine"
   | "village"
   | "overworld"
-  | "mistwood";
+  | "mistwood"
+  | "emberfen";
 
 export const TileType = {
   Wall: 0,

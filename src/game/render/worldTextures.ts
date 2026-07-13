@@ -10,6 +10,7 @@ const ZONE_PALETTES: Record<ZoneId, ZonePalette> = {
   village: { light: 0xeec58a, dark: 0xd89a5e, accent: 0xffe2a2, edge: 0xa96a43 },
   overworld: { light: 0x78c8e0, dark: 0x4fa8c8, accent: 0xb8e8f0, edge: 0x387898 },
   mistwood: { light: 0xb8a8d8, dark: 0x8878b0, accent: 0xe0d4f8, edge: 0x5a4a80 },
+  emberfen: { light: 0xe0b070, dark: 0xb87848, accent: 0xffd090, edge: 0x8a5030 },
 };
 
 const BOUNDARY_HEIGHT = 56;
@@ -90,6 +91,16 @@ function generateFloorTextures(scene: Phaser.Scene, zoneId: ZoneId): void {
       g.fillTriangle(28, 20, 31, 12, 34, 20);
       g.fillStyle(0xd8c8f0, 0.55);
       g.fillCircle(22, 22, 2);
+    } else if (zoneId === "emberfen") {
+      // Warm peat + ember flecks
+      g.fillStyle(0x6a4030, 0.35);
+      g.fillRoundedRect(8, 12, 14, 5, 2);
+      g.fillRoundedRect(26, 28, 12, 4, 2);
+      g.fillStyle(0xffa040, 0.55);
+      g.fillCircle(16, 20, 2);
+      g.fillCircle(34, 14, 2);
+      g.fillStyle(0xffe080, 0.4);
+      g.fillEllipse(24, 32, 16, 5);
     } else {
       // Bright blue route grass (Folklore Fields)
       g.fillStyle(0xdff7f4, 0.55);
@@ -261,6 +272,28 @@ function generateWallTextures(scene: Phaser.Scene): void {
     g.fillStyle(0xd0c0f0, 0.7);
     g.fillCircle(20, BOUNDARY_HEIGHT - 22, 3);
     g.fillCircle(38, BOUNDARY_HEIGHT - 26, 3);
+  });
+
+  // Emberfen — warm peat banks
+  generateBoundaryTexture(scene, "boundary-emberfen", (g) => {
+    g.fillStyle(0x000000, 0.14);
+    g.fillEllipse(24, BOUNDARY_HEIGHT - 3, 38, 6);
+
+    g.fillStyle(OUTLINE, 1);
+    g.fillRoundedRect(2, BOUNDARY_HEIGHT - 16, 44, 14, 3);
+    g.fillStyle(0x8a5030, 1);
+    g.fillRoundedRect(3, BOUNDARY_HEIGHT - 15, 42, 12, 2);
+
+    g.fillStyle(0xb86840, 1);
+    g.fillTriangle(2, BOUNDARY_HEIGHT - 16, 18, BOUNDARY_HEIGHT - 36, 34, BOUNDARY_HEIGHT - 16);
+    g.fillStyle(0xd88850, 1);
+    g.fillTriangle(14, BOUNDARY_HEIGHT - 16, 30, BOUNDARY_HEIGHT - 44, 46, BOUNDARY_HEIGHT - 16);
+
+    g.fillStyle(0xffa040, 0.7);
+    g.fillCircle(16, BOUNDARY_HEIGHT - 24, 3);
+    g.fillCircle(34, BOUNDARY_HEIGHT - 30, 3);
+    g.fillStyle(0xffe080, 0.45);
+    g.fillEllipse(24, BOUNDARY_HEIGHT - 28, 18, 6);
   });
 }
 
