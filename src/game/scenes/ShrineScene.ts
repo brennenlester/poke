@@ -226,10 +226,10 @@ export class ShrineScene extends Phaser.Scene {
         .text(x, y, tab.label, {
           color: this.activeTab === tab.id ? "#1a1a2e" : MOON_TEXT,
           backgroundColor:
-            this.activeTab === tab.id ? "#e0d4f0" : "#4a3a68",
-          fontFamily: "system-ui, sans-serif",
+            this.activeTab === tab.id ? "#f0e2ff" : "#38294f",
+          fontFamily: "Source Sans 3, sans-serif",
           fontSize: "15px",
-          padding: { x: 16, y: 8 },
+          padding: { x: 18, y: 9 },
         })
         .setOrigin(0.5)
         .setInteractive({ useHandCursor: true });
@@ -251,7 +251,7 @@ export class ShrineScene extends Phaser.Scene {
     this.tabButtons.forEach((btn, i) => {
       const active = this.activeTab === ids[i];
       btn.setColor(active ? "#1a1a2e" : MOON_TEXT);
-      btn.setBackgroundColor(active ? "#e0d4f0" : "#4a3a68");
+      btn.setBackgroundColor(active ? "#f0e2ff" : "#38294f");
       btn.setText(labels[i]);
     });
   }

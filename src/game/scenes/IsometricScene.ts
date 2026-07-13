@@ -55,6 +55,12 @@ const SCREEN_MARGIN = 12;
 const MOVE_SPEED = 6;
 const ENCOUNTER_TRAVEL_THRESHOLD = 0.75;
 const ENCOUNTER_CHANCE = 0.10;
+const ZONE_CAMERA_COLORS: Record<ZoneId, number> = {
+  grove: 0x18251c,
+  shrine: 0x211a32,
+  village: 0x352417,
+  overworld: 0x162738,
+};
 
 type Facing = "south" | "north" | "east" | "west";
 
@@ -83,6 +89,8 @@ export class IsometricScene extends Phaser.Scene {
   private worldOrigin = { x: 0, y: 0 };
   private onWindowResize = () => this.onResize();
   private layoutLocked = false;
+  private isMoving = false;
+  private playerBaseY = 0;
 
   constructor() {
     super({ key: "IsometricScene" });
@@ -135,7 +143,9 @@ export class IsometricScene extends Phaser.Scene {
   }
 
   update(_time: number, delta: number): void {
+    this.updatePlayerBob(_time);
     if (this.inEncounter || this.inShrine) {
+      this.isMoving = false;
       return;
     }
     if (import.meta.env.DEV && Phaser.Input.Keyboard.JustDown(this.unlockKey)) {
@@ -175,9 +185,11 @@ export class IsometricScene extends Phaser.Scene {
     }
 
     if (dx === 0 && dy === 0) {
+      this.isMoving = false;
       return;
     }
 
+    this.isMoving = true;
     this.updateFacing(dx, dy);
 
     const length = Math.hypot(dx, dy);
@@ -270,9 +282,12 @@ export class IsometricScene extends Phaser.Scene {
 
     ensureWorldTextures(this, zoneId);
     this.worldOrigin = this.getZoneWorldOrigin(zone);
+    this.cameras.main.setBackgroundColor(ZONE_CAMERA_COLORS[zoneId]);
 
+    this.drawBackdrop(zone);
     this.drawZoneTiles(zone);
     this.drawProps(zone);
+    this.drawVignette();
     recordQuestEvent({ type: "enter_zone", zoneId });
 
     this.player = this.add
@@ -429,6 +444,39 @@ export class IsometricScene extends Phaser.Scene {
     this.drawWalls(zone);
   }
 
+  private drawBackdrop(zone: ZoneDefinition): void {
+    const palette: Record<ZoneId, { sky: number; hill: number; mist: number }> = {
+      grove: { sky: 0x5c8660, hill: 0x31543a, mist: 0xb4d49a },
+      shrine: { sky: 0x594b7b, hill: 0x30254d, mist: 0xd9c9ed },
+      village: { sky: 0xb07a54, hill: 0x694635, mist: 0xf0c58d },
+      overworld: { sky: 0x547b9d, hill: 0x2e5068, mist: 0xb5d8e2 },
+    };
+    const colors = palette[zone.id];
+    const bounds = this.getZoneWorldBounds(zone);
+    const g = this.add.graphics().setDepth(-1000).setScrollFactor(0.16);
+    g.fillStyle(colors.sky, 1);
+    g.fillRect(bounds.minX - 800, bounds.minY - 500, bounds.width + 1600, bounds.height + 1000);
+    g.fillStyle(colors.mist, 0.2);
+    g.fillRect(bounds.minX - 800, bounds.minY + 20, bounds.width + 1600, 110);
+    g.fillStyle(colors.hill, 0.85);
+    for (let x = bounds.minX - 400; x < bounds.maxX + 400; x += 120) {
+      g.fillTriangle(x, bounds.minY + 145, x + 75, bounds.minY + 40, x + 150, bounds.minY + 145);
+    }
+    g.fillStyle(colors.mist, 0.22);
+    g.fillCircle(bounds.minX + bounds.width * 0.72, bounds.minY + 80, 42);
+  }
+
+  private drawVignette(): void {
+    const w = this.scale.width;
+    const h = this.scale.height;
+    const g = this.add.graphics().setScrollFactor(0).setDepth(50_000);
+    g.fillStyle(0x120e1a, 0.26);
+    g.fillRect(0, 0, w, 32);
+    g.fillRect(0, h - 32, w, 32);
+    g.fillRect(0, 0, 32, h);
+    g.fillRect(w - 32, 0, 32, h);
+  }
+
   private drawWalls(zone: ZoneDefinition): void {
     for (let y = 0; y < zone.height; y++) {
       for (let x = 0; x < zone.width; x++) {
@@ -575,7 +623,32 @@ export class IsometricScene extends Phaser.Scene {
     );
     updateStatusPanel(getZone(this.currentZoneId));
     this.showGatherToast(result.message, result.ok);
+    if (result.ok) {
+      this.spawnHarvestBurst(prop.x, prop.y, prop.action.materialId);
+    }
     this.updateInteractPrompt();
+  }
+
+  private spawnHarvestBurst(gridX: number, gridY: number, materialId: string): void {
+    const color =
+      materialId.includes("wood") ? 0xa87545 :
+      materialId.includes("fiber") ? 0x91bf66 :
+      materialId.includes("stone") ? 0x9a9aa4 : 0xb4aaa0;
+    const screen = this.toScreen(gridX, gridY);
+    for (let i = 0; i < 8; i += 1) {
+      const particle = this.add
+        .rectangle(screen.x, screen.y + TILE_HEIGHT / 2 - 18, 4, 4, color)
+        .setDepth(PLAYER_DEPTH + 1);
+      this.tweens.add({
+        targets: particle,
+        x: particle.x + (i - 3.5) * 7,
+        y: particle.y - 18 - (i % 3) * 6,
+        alpha: 0,
+        duration: 440,
+        ease: "Cubic.easeOut",
+        onComplete: () => particle.destroy(),
+      });
+    }
   }
 
   private showGatherToast(message: string, ok: boolean): void {
@@ -602,11 +675,18 @@ export class IsometricScene extends Phaser.Scene {
   private syncPlayerToGrid(): void {
     const screen = this.toScreen(this.playerGridX, this.playerGridY);
 
-    this.player.setPosition(
-      screen.x,
-      screen.y + TILE_HEIGHT / 2 - 2,
-    );
+    this.playerBaseY = screen.y + TILE_HEIGHT / 2 - 2;
+    this.player.setPosition(screen.x, this.playerBaseY);
     this.player.setDepth(PLAYER_DEPTH);
+  }
+
+  private updatePlayerBob(time: number): void {
+    if (!this.player) {
+      return;
+    }
+    const speed = this.isMoving ? 0.016 : 0.004;
+    const height = this.isMoving ? 2 : 1;
+    this.player.y = this.playerBaseY + Math.sin(time * speed) * height;
   }
 
   private updateQuestToast(): void {

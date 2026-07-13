@@ -36,6 +36,10 @@ export class BattleScene extends Phaser.Scene {
   private logText!: Phaser.GameObjects.Text;
   private playerHpText!: Phaser.GameObjects.Text;
   private wildHpText!: Phaser.GameObjects.Text;
+  private wildSprite!: Phaser.GameObjects.Image;
+  private playerSprite!: Phaser.GameObjects.Image;
+  private wildHpBar!: Phaser.GameObjects.Rectangle;
+  private playerHpBar!: Phaser.GameObjects.Rectangle;
   private waitingForPlayer = true;
   private forcedSwitch = false;
   private switchMenuOpen = false;
@@ -103,9 +107,7 @@ export class BattleScene extends Phaser.Scene {
     this.scene.bringToTop();
     ensureCreatureTextures(this);
 
-    this.add
-      .rectangle(0, 0, this.scale.width, this.scale.height, 0x000000, 0.75)
-      .setOrigin(0);
+    this.drawArena();
 
     const cx = this.scale.width / 2;
 
@@ -117,20 +119,31 @@ export class BattleScene extends Phaser.Scene {
       })
       .setOrigin(0.5);
 
-    this.wildHpText = this.add.text(cx - 120, 90, "", {
-      color: "#f0e6d2",
-      fontFamily: "system-ui, sans-serif",
-      fontSize: "14px",
-    });
+    this.wildSprite = this.add
+      .image(cx + 116, 142, getCreatureDefinition(this.wildCreatureId).spriteKey)
+      .setScale(1.55)
+      .setDepth(2);
+    this.playerSprite = this.add
+      .image(cx - 118, 238, this.getPlayerSpriteKey())
+      .setScale(1.55)
+      .setDepth(2);
 
-    this.playerHpText = this.add.text(cx + 40, 200, "", {
+    this.wildHpText = this.add.text(cx + 18, 72, "", {
       color: "#f0e6d2",
-      fontFamily: "system-ui, sans-serif",
+      fontFamily: "Source Sans 3, sans-serif",
       fontSize: "14px",
     });
+    this.wildHpBar = this.add.rectangle(cx + 82, 96, 132, 8, 0x75b85a).setOrigin(0, 0.5);
+
+    this.playerHpText = this.add.text(cx - 170, 186, "", {
+      color: "#f0e6d2",
+      fontFamily: "Source Sans 3, sans-serif",
+      fontSize: "14px",
+    });
+    this.playerHpBar = this.add.rectangle(cx - 170, 210, 132, 8, 0x79acc8).setOrigin(0, 0.5);
 
     this.logText = this.add
-      .text(cx, 260, "", {
+      .text(cx, 286, "", {
         color: "#c8b8a0",
         fontFamily: "system-ui, sans-serif",
         fontSize: "14px",
@@ -142,6 +155,35 @@ export class BattleScene extends Phaser.Scene {
     this.refreshHp();
     this.log(`A training spar with ${this.wild.name} begins.`);
     this.buildActionButtons();
+  }
+
+  private drawArena(): void {
+    const w = this.scale.width;
+    const h = this.scale.height;
+    const g = this.add.graphics().setDepth(-10);
+    g.fillStyle(0x120d1d, 1);
+    g.fillRect(0, 0, w, h);
+    g.fillStyle(0x312347, 0.8);
+    g.fillCircle(w * 0.72, 82, 58);
+    g.fillStyle(0xe0d5f0, 0.26);
+    g.fillCircle(w * 0.72, 74, 34);
+    g.fillStyle(0x1c382c, 1);
+    for (let x = -40; x < w + 50; x += 54) {
+      g.fillTriangle(x, 300, x + 28, 180 + ((x / 54) % 2) * 22, x + 56, 300);
+    }
+    g.fillStyle(0x243f30, 0.78);
+    g.fillEllipse(w / 2, 244, w * 0.82, 82);
+    g.lineStyle(2, 0x8d76a8, 0.35);
+    g.strokeEllipse(w / 2, 244, w * 0.74, 62);
+  }
+
+  private getPlayerSpriteKey(): string {
+    if (this.partyInstanceIndex < 0) {
+      return "player-south";
+    }
+    return getCreatureDefinition(
+      playerParty.creatures[this.partyInstanceIndex].definitionId,
+    ).spriteKey;
   }
 
   private combatantFromPartyIndex(index: number): BattleCombatant {
@@ -417,6 +459,7 @@ export class BattleScene extends Phaser.Scene {
     this.player = this.combatantFromWanderer(buildArmedWanderer(weaponId));
     this.hideWandererFallbackMenu();
     this.refreshHp();
+    this.playerSprite.setTexture(this.getPlayerSpriteKey());
     this.log(`${this.player.name} steps up to fight!`);
     this.buildActionButtons();
     this.waitingForPlayer = true;
@@ -439,6 +482,7 @@ export class BattleScene extends Phaser.Scene {
     this.forcedSwitch = false;
     this.hideSwitchMenu();
     this.refreshHp();
+    this.playerSprite.setTexture(this.getPlayerSpriteKey());
     this.log(`Go, ${this.player.name}!`);
     this.buildActionButtons();
 
@@ -455,6 +499,7 @@ export class BattleScene extends Phaser.Scene {
     const damage = calcDamage(this.player, move, this.wild);
     applyDamage(this.wild, damage);
     this.showDamageCounter("wild", damage);
+    this.flashCombatant("wild");
     this.log(`${this.player.name} used ${move.name}.`);
     this.refreshHp();
 
@@ -471,6 +516,7 @@ export class BattleScene extends Phaser.Scene {
     const damage = calcDamage(this.wild, move, this.player);
     applyDamage(this.player, damage);
     this.showDamageCounter("player", damage);
+    this.flashCombatant("player");
     this.log(`${this.wild.name} used ${move.name}.`);
     this.refreshHp();
 
@@ -506,6 +552,16 @@ export class BattleScene extends Phaser.Scene {
     this.playerHpText.setText(
       `${this.player.name}: ${this.player.currentHp}/${this.player.maxHp} HP`,
     );
+    this.wildHpBar.width = 132 * Math.max(0, this.wild.currentHp / this.wild.maxHp);
+    this.playerHpBar.width =
+      132 * Math.max(0, this.player.currentHp / this.player.maxHp);
+  }
+
+  private flashCombatant(target: "wild" | "player"): void {
+    const sprite = target === "wild" ? this.wildSprite : this.playerSprite;
+    sprite.setTintFill(0xffd9d2);
+    this.cameras.main.shake(120, 0.004);
+    this.time.delayedCall(120, () => sprite.clearTint());
   }
 
   private showDamageCounter(
