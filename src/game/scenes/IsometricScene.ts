@@ -33,6 +33,11 @@ import {
   setInviteStatus,
   updateStatusPanel,
 } from "../ui/statusPanel";
+import {
+  consumeTouchInteract,
+  getTouchAxes,
+  initTouchControls,
+} from "../ui/touchControls";
 import { canOccupy } from "../world/collision";
 import { copyInviteLink } from "../world/invite";
 import { takePendingWorldPosition } from "../world/worldSnapshot";
@@ -127,6 +132,7 @@ export class IsometricScene extends Phaser.Scene {
     this.unlockKey = this.input.keyboard!.addKey("U");
     this.inviteKey = this.input.keyboard!.addKey("I");
     this.interactKey = this.input.keyboard!.addKey("E");
+    initTouchControls();
 
     this.loadZone(this.currentZoneId);
 
@@ -172,7 +178,10 @@ export class IsometricScene extends Phaser.Scene {
 
     this.updateQuestToast();
 
-    if (Phaser.Input.Keyboard.JustDown(this.interactKey)) {
+    if (
+      Phaser.Input.Keyboard.JustDown(this.interactKey) ||
+      consumeTouchInteract()
+    ) {
       if (!this.tryShrineInteract()) {
         this.tryGatherInteract();
       }
@@ -196,6 +205,10 @@ export class IsometricScene extends Phaser.Scene {
     if (this.cursors.down.isDown || this.wasd.S.isDown) {
       dy += 1;
     }
+
+    const touch = getTouchAxes();
+    dx += touch.x;
+    dy += touch.y;
 
     if (dx === 0 && dy === 0) {
       this.isMoving = false;

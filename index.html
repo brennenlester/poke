@@ -24,7 +24,26 @@
         </button>
       </div>
       <div id="playfield">
-        <div id="game"></div>
+        <div id="game">
+          <div id="touch-controls" class="touch-controls" aria-hidden="true">
+            <div
+              id="touch-stick-pad"
+              class="touch-stick-pad"
+              role="application"
+              aria-label="Move"
+            >
+              <div id="touch-stick-knob" class="touch-stick-knob"></div>
+            </div>
+            <button
+              id="touch-interact"
+              type="button"
+              class="touch-interact"
+              aria-label="Interact"
+            >
+              E
+            </button>
+          </div>
+        </div>
         <div id="status-panel" aria-label="Player status">
           <div id="status-zone" class="status-line status-zone"></div>
           <div id="status-quest" class="status-line status-quest"></div>
