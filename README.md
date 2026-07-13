@@ -1,72 +1,84 @@
 # Poke
 
-Browser-based sandbox creature-collecting RPG with folklore-inspired creatures and 2.5D isometric exploration.
+A browser folklore RPG: explore isometric zones, befriend creatures, spar for materials, craft at Moon Shrine, then invite friends into your world.
 
-## Development setup
+**Play:** [poke-brennen1.vercel.app](https://poke-brennen1.vercel.app)
+
+---
+
+## How to play
+
+### Controls
+
+| Input | Action |
+| --- | --- |
+| **Arrow keys** or **WASD** | Move (hold to keep walking) |
+| **E** | Interact — open Moon Shrine when standing on the moon altar |
+| **I** | Copy a friend invite link (host only) |
+| **Reset game** (status panel) | Wipe local host save and start fresh |
+
+### Confined region
+
+Start in **Whisper Grove**, then walk map exits through **Moon Shrine** to **Hearth Crossing**. North of the village is the **Folklore Overworld**, locked until Story quest 2 is complete.
+
+### Story quests
+
+The HUD shows `Story N/4: …` and a short “Next” hint. Host progress saves automatically.
+
+1. **Befriend a wild creature** — walk until an encounter appears, then choose **Befriend**.
+2. **Win a training spar** — choose **Spar** and win. This **opens the overworld gate**.
+3. **Reach Hearth Crossing** — follow the path Grove → Shrine → Village.
+4. **Craft a relic at Moon Shrine** — stand on the moon altar, press **E**, craft any relic.
+
+Gate status reads `Overworld gate: LOCKED (Story 2/4)` until the spar quest is done, then `OPEN`.
+
+### Encounters and crafting
+
+- Walk in zones to trigger encounters: **Befriend**, **Spar**, or **Flee**.
+- Winning spars grants creature materials, Folklore Dust, and XP.
+- At Moon Shrine, craft relics and apply shrine effects to party creatures.
+
+### Friend invites
+
+1. As **host**, press **I** to copy an invite URL (party, inventory, quests, and position).
+2. Open the link in another browser/tab to join as a **visitor**.
+3. Visitors can explore the host snapshot but **cannot** trigger encounters, craft, or advance quests.
+4. Broken or tampered `?join=` links show an error screen and do not change your local save.
+
+### Save and resume
+
+Host progress (party, inventory, quests, position, gate) lives in `localStorage`. Append `?new=1` or use **Reset game** to start over. A valid `?join=` invite always takes precedence over the local save.
+
+---
+
+## Development
 
 **Requirements:** Node.js 20+ and npm.
 
 ```bash
-# Install dependencies
 npm install
-
-# Start dev server (default http://localhost:5173)
-npm run dev
-
-# Production build (output in dist/)
-npm run build
-
-# Preview production build locally
-npm run preview
+npm run dev      # http://localhost:5173
+npm test         # Vitest unit tests
+npm run build    # production build → dist/
+npm run preview  # serve dist locally
 ```
 
-### CI / deploy
+Pull requests to `main` run CI (`npm ci`, `npm test`, `npm run build`). Merges deploy via Vercel.
 
-Pull requests to `main` run GitHub Actions (`npm ci` + `npm run build`). Merges to `main` deploy production via the existing GitHub ↔ Vercel integration ([poke-brennen1.vercel.app](https://poke-brennen1.vercel.app)).
+### Dev-only cheats
 
-Open the dev server in a browser. You should see an isometric tile grid with a placeholder player. Move with **arrow keys** or **WASD** (hold for continuous movement).
+These are for local development only; they are not part of normal play:
 
-At **Moon Shrine**, stand on the moon altar and press **E** to open the shrine UI. The world uses a **rotated square board** (ALttP-style 2.5D) with a camera that follows your character.
+- **U** — toggle the overworld gate without completing Story 2
+- `?encounter=<creatureId>` / `?spar=<creatureId>` — launch a preview encounter/spar in the Vite dev server
 
-### World zones (dev)
+### Project layout
 
-The confined starting region has three zones — **Whisper Grove** → **Moon Shrine** → **Hearth Crossing** — connected by map exits. The **Folklore Overworld** north of Hearth Crossing is locked until you complete **Story 2/4** (win a training spar).
-
-### Story quests
-
-Four guided beats appear in the HUD (`Story N/4: …`). Progress persists across refresh for host sessions:
-
-1. Befriend a wild creature
-2. Win a training spar — **opens the overworld gate**
-3. Reach Hearth Crossing
-4. Craft a relic at Moon Shrine
-
-Gate status is shown as `Overworld gate: LOCKED (Story 2/4)` until the spar quest completes.
-
-### Friend invites
-
-As host, press **I** to copy an invite link. The URL encodes a snapshot of your world (party, inventory, quests, position). Open that link in another browser tab to join as a **visitor** — read-only exploration of the host's world (no encounters, crafting, or quest progress).
-
-### Save and resume
-
-Host progress (party, inventory, quests, position, gate) persists in `localStorage` across refresh. Use **Reset game** in the status panel, or append `?new=1`, to start fresh. Visitor `?join=` links always take precedence over local save.
-
-- **U** — dev-only cheat: toggle overworld gate (local development)
-
-## Project structure
-
-- `src/game/` — Phaser 3 game bootstrap and scenes
-- `src/game/isometric.ts` — isometric grid ↔ screen coordinate helpers
-- `src/game/story/` — quest definitions and progress tracking
-- `src/game/world/` — zone maps, collision, `worldState.overworldUnlocked`, invite snapshots
-- `src/game/creatures/` — folklore creature catalog and party collection
-- `src/game/inventory/` — spar-win materials and crafted items
-- `src/game/crafting/` — shrine craft recipes
-- `src/game/shrine/` — fusion effect matrix and Moon Shrine logic
-- `src/game/progression/` — creature XP and leveling from spar wins
-- `src/game/encounters/` — zone encounter tables
-- Walk in zones to trigger random encounters; choose **Befriend**, **Spar**, or **Flee**
-- Win spars to earn creature-specific materials, Folklore Dust, and XP
+- `src/game/` — Phaser bootstrap and scenes
+- `src/game/story/` — quest definitions and progress
+- `src/game/world/` — zones, collision, invites, saves
+- `src/game/creatures/` — catalog and party
+- `src/game/inventory/` / `src/game/crafting/` / `src/game/shrine/` — materials and Moon Shrine
 - `AGENTS.md` — agent workflow conventions
 
 ## License
