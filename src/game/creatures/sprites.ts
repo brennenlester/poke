@@ -245,6 +245,57 @@ function drawHearthflame(g: Phaser.GameObjects.Graphics, color: number): void {
   drawEyes(g, 19, 29, 18);
 }
 
+function drawPeatSprite(g: Phaser.GameObjects.Graphics, color: number): void {
+  blob(g, 24, 28, 22, 18, color);
+  blob(g, 24, 16, 16, 14, shade(color, 20));
+  g.fillStyle(OUTLINE, 1);
+  g.fillTriangle(16, 10, 12, 2, 20, 8);
+  g.fillTriangle(32, 10, 36, 2, 28, 8);
+  g.fillStyle(shade(color, 35), 1);
+  g.fillTriangle(16, 9, 13, 4, 19, 8);
+  g.fillTriangle(32, 9, 35, 4, 29, 8);
+  g.fillStyle(0xff9040, 0.7);
+  g.fillCircle(18, 26, 2);
+  g.fillCircle(30, 24, 2);
+  drawEyes(g, 20, 22, 16, 2);
+}
+
+function drawCinderToad(g: Phaser.GameObjects.Graphics, color: number): void {
+  g.fillStyle(OUTLINE, 1);
+  g.fillEllipse(16, 44, 10, 6);
+  g.fillEllipse(32, 44, 10, 6);
+  g.fillStyle(shade(color, -20), 1);
+  g.fillEllipse(16, 43, 8, 4);
+  g.fillEllipse(32, 43, 8, 4);
+  blob(g, 24, 30, 28, 18, color);
+  blob(g, 24, 18, 18, 14, shade(color, 25));
+  g.fillStyle(0xffe080, 0.85);
+  g.fillCircle(18, 16, 4);
+  g.fillCircle(30, 16, 4);
+  g.fillStyle(OUTLINE, 1);
+  g.fillCircle(18, 16, 2);
+  g.fillCircle(30, 16, 2);
+  drawEyes(g, 20, 26, 16, 3);
+}
+
+function drawBogLantern(g: Phaser.GameObjects.Graphics, color: number): void {
+  g.fillStyle(OUTLINE, 1);
+  g.fillRoundedRect(21, 34, 6, 12, 2);
+  g.fillStyle(shade(color, -40), 1);
+  g.fillRoundedRect(22, 35, 4, 10, 1);
+  g.fillStyle(OUTLINE, 1);
+  g.fillCircle(24, 20, 14);
+  g.fillStyle(color, 1);
+  g.fillCircle(24, 20, 12);
+  g.fillStyle(0xfff8d0, 0.9);
+  g.fillCircle(24, 18, 7);
+  g.fillStyle(0xffffff, 0.65);
+  g.fillCircle(22, 15, 3);
+  g.fillStyle(color, 0.35);
+  g.fillCircle(24, 20, 18);
+  drawEyes(g, 20, 22, 16, 2);
+}
+
 const CREATURE_DRAWERS: Record<string, CreatureDrawer> = {
   mossling: drawMossling,
   "ember-wisp": drawEmberWisp,
@@ -256,6 +307,9 @@ const CREATURE_DRAWERS: Record<string, CreatureDrawer> = {
   "thunder-finch": drawThunderFinch,
   bramblewarden: drawBramblewarden,
   hearthflame: drawHearthflame,
+  "peat-sprite": drawPeatSprite,
+  "cinder-toad": drawCinderToad,
+  "bog-lantern": drawBogLantern,
 };
 
 export function ensureCreatureTextures(scene: Phaser.Scene): void {

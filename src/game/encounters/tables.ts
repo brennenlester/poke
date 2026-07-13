@@ -26,6 +26,11 @@ export const ZONE_ENCOUNTERS: Record<ZoneId, EncounterEntry[]> = {
     { id: "thunder-finch", weight: 35 },
     { id: "lantern-fox", weight: 20 },
   ],
+  emberfen: [
+    { id: "peat-sprite", weight: 40 },
+    { id: "cinder-toad", weight: 35 },
+    { id: "bog-lantern", weight: 25 },
+  ],
 };
 
 export function rollWildCreature(zoneId: ZoneId): string | null {
