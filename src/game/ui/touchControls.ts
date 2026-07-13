@@ -7,6 +7,7 @@ const DEADZONE = 0.22;
 let axes: TouchAxes = { x: 0, y: 0 };
 let interactQueued = false;
 let bound = false;
+let inputEnabled = true;
 
 export function getTouchAxes(): TouchAxes {
   return axes;
@@ -19,6 +20,18 @@ export function consumeTouchInteract(): boolean {
   }
   interactQueued = false;
   return true;
+}
+
+export function setTouchControlsEnabled(enabled: boolean): void {
+  inputEnabled = enabled;
+  if (!enabled) {
+    axes = { x: 0, y: 0 };
+    interactQueued = false;
+  }
+  const root = document.getElementById("touch-controls");
+  if (root) {
+    root.classList.toggle("touch-controls-disabled", !enabled);
+  }
 }
 
 function setAxesFromPointer(
@@ -71,6 +84,9 @@ export function initTouchControls(): void {
   let activePointerId: number | null = null;
 
   const onPadDown = (event: PointerEvent): void => {
+    if (!inputEnabled) {
+      return;
+    }
     event.preventDefault();
     activePointerId = event.pointerId;
     pad.setPointerCapture(event.pointerId);
@@ -102,6 +118,9 @@ export function initTouchControls(): void {
   pad.addEventListener("pointercancel", onPadUp);
 
   interact.addEventListener("pointerdown", (event) => {
+    if (!inputEnabled) {
+      return;
+    }
     event.preventDefault();
     interactQueued = true;
   });

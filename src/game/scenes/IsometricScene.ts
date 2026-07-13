@@ -37,6 +37,7 @@ import {
   consumeTouchInteract,
   getTouchAxes,
   initTouchControls,
+  setTouchControlsEnabled,
 } from "../ui/touchControls";
 import { canOccupy } from "../world/collision";
 import { copyInviteLink } from "../world/invite";
@@ -142,6 +143,7 @@ export class IsometricScene extends Phaser.Scene {
       this.inEncounter = false;
       this.inShrine = false;
       this.travelSinceEncounter = 0;
+      setTouchControlsEnabled(true);
       const zoneId = this.currentZoneId;
       const x = this.playerGridX;
       const y = this.playerGridY;
@@ -276,6 +278,7 @@ export class IsometricScene extends Phaser.Scene {
     }
 
     this.inEncounter = true;
+    setTouchControlsEnabled(false);
     this.cameras.main.fadeOut(140, 255, 255, 255);
     this.time.delayedCall(145, () => {
       this.scene.pause();
@@ -640,6 +643,7 @@ export class IsometricScene extends Phaser.Scene {
       return false;
     }
     this.inShrine = true;
+    setTouchControlsEnabled(false);
     if (this.shrinePrompt) {
       this.shrinePrompt.destroy();
       this.shrinePrompt = undefined;

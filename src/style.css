@@ -255,3 +255,8 @@ body,
   background: #d0ebe4;
 }
 
+.touch-controls.touch-controls-disabled {
+  visibility: hidden;
+  pointer-events: none;
+}
+
