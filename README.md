@@ -20,6 +20,10 @@ npm run build
 npm run preview
 ```
 
+### CI / deploy
+
+Pull requests to `main` run GitHub Actions (`npm ci` + `npm run build`). Merges to `main` deploy production via the existing GitHub ↔ Vercel integration ([poke-brennen1.vercel.app](https://poke-brennen1.vercel.app)).
+
 Open the dev server in a browser. You should see an isometric tile grid with a placeholder player. Move with **arrow keys** or **WASD** (hold for continuous movement).
 
 At **Moon Shrine**, stand on the moon altar and press **E** to open the shrine UI. The world uses a **rotated square board** (ALttP-style 2.5D) with a camera that follows your character.
