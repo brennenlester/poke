@@ -6,7 +6,7 @@ import {
   ENCOUNTER_CREATURE_DISPLAY,
   fitDisplay,
 } from "../render/displaySizes";
-import { applyOverlayPixelRatio, DESIGN_SIZE } from "../render/pixelRatio";
+import { bindOverlayPixelRatio, DESIGN_SIZE } from "../render/pixelRatio";
 import { UNARMED_WANDERER } from "../battle/wandererWeapons";
 import { isVisitorMode } from "../world/worldSession";
 
@@ -32,7 +32,7 @@ export class EncounterScene extends Phaser.Scene {
   }
 
   create(): void {
-    applyOverlayPixelRatio(this);
+    bindOverlayPixelRatio(this);
     ensureCreatureTextures(this);
     const def = getCreatureDefinition(this.creatureId);
 

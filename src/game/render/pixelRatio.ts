@@ -1,4 +1,4 @@
-import type Phaser from "phaser";
+import Phaser from "phaser";
 
 /** Cap DPR so fill-rate stays reasonable on 3× phones. */
 export const RENDER_DPR = Math.min(
@@ -35,6 +35,43 @@ export function applyOverlayPixelRatio(scene: Phaser.Scene): void {
   );
   cam.setZoom(zoom);
   cam.centerOn(DESIGN_SIZE / 2, DESIGN_SIZE / 2);
+}
+
+/** Keep overlay framing correct when the shared Scale Manager resizes. */
+export function bindOverlayPixelRatio(scene: Phaser.Scene): void {
+  applyOverlayPixelRatio(scene);
+  const onResize = (): void => {
+    if (!scene.sys.settings.active && !scene.sys.settings.visible) {
+      return;
+    }
+    applyOverlayPixelRatio(scene);
+  };
+  scene.scale.on("resize", onResize);
+  scene.events.once("shutdown", () => {
+    scene.scale.off("resize", onResize);
+  });
+}
+
+/**
+ * Place world-scene HUD text in the camera's visible logical space so HiDPI
+ * buffer sizing + main-camera zoom does not push scrollFactor(0) UI off-screen.
+ */
+export function placeWorldHudText(
+  scene: Phaser.Scene,
+  text: Phaser.GameObjects.Text,
+  anchor: "top" | "bottom",
+  inset: number,
+): void {
+  const cam = scene.cameras.main;
+  const halfH = cam.height / (2 * cam.zoom);
+  text.setScrollFactor(1);
+  text.setScale(1 / cam.zoom);
+  text.setPosition(
+    cam.midPoint.x,
+    anchor === "bottom"
+      ? cam.midPoint.y + halfH - inset / cam.zoom
+      : cam.midPoint.y - halfH + inset / cam.zoom,
+  );
 }
 
 export function overlayCenter(): { x: number; y: number } {

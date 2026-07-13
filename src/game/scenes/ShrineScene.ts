@@ -23,7 +23,7 @@ import {
 import { recordQuestEvent } from "../story/questProgress";
 import { notifyWorldChanged } from "../world/worldSaveSchedule";
 import { isVisitorMode } from "../world/worldSession";
-import { applyOverlayPixelRatio, DESIGN_SIZE } from "../render/pixelRatio";
+import { bindOverlayPixelRatio, DESIGN_SIZE } from "../render/pixelRatio";
 
 const MOON_PANEL = 0x354d78;
 const MOON_STROKE = 0xffedb0;
@@ -58,7 +58,7 @@ export class ShrineScene extends Phaser.Scene {
   }
 
   create(): void {
-    applyOverlayPixelRatio(this);
+    bindOverlayPixelRatio(this);
     this.activeTab = "craft";
     this.selectedItemId = null;
 

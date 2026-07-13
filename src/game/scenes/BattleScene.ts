@@ -11,7 +11,7 @@ import {
   BATTLE_PLAYER_DISPLAY,
   fitDisplay,
 } from "../render/displaySizes";
-import { applyOverlayPixelRatio, DESIGN_SIZE } from "../render/pixelRatio";
+import { bindOverlayPixelRatio, DESIGN_SIZE } from "../render/pixelRatio";
 import { ensurePlayerAnims } from "../render/playerAnims";
 import type { BattleCombatant, MoveDefinition } from "../creatures/types";
 import {
@@ -112,7 +112,7 @@ export class BattleScene extends Phaser.Scene {
 
   create(): void {
     this.scene.bringToTop();
-    applyOverlayPixelRatio(this);
+    bindOverlayPixelRatio(this);
     ensureCreatureTextures(this);
     ensurePlayerAnims(this);
     this.cameras.main.fadeIn(140, 255, 255, 255);

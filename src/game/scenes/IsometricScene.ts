@@ -14,7 +14,11 @@ import {
   PROP_DISPLAY,
   fitDisplay,
 } from "../render/displaySizes";
-import { resizeGameForDisplay } from "../render/pixelRatio";
+import {
+  placeWorldHudText,
+  RENDER_DPR,
+  resizeGameForDisplay,
+} from "../render/pixelRatio";
 import { ensurePlayerAnims, bindPlayerDisplaySize } from "../render/playerAnims";
 import { rollWildCreature } from "../encounters/tables";
 import {
@@ -174,6 +178,7 @@ export class IsometricScene extends Phaser.Scene {
     }
 
     this.updateInteractPrompt();
+    this.layoutWorldHudTexts();
 
     let dx = 0;
     let dy = 0;
@@ -396,9 +401,23 @@ export class IsometricScene extends Phaser.Scene {
       this.scale.width / bounds.width,
       this.scale.height / bounds.height,
     );
-    cam.setZoom(Phaser.Math.Clamp(zoom, 0.85, 2.8));
+    // Allow zoom to scale with HiDPI buffer so the world still fills the view.
+    cam.setZoom(Phaser.Math.Clamp(zoom, 0.85, 2.8 * RENDER_DPR));
+    this.layoutWorldHudTexts();
     } finally {
       this.layoutLocked = false;
+    }
+  }
+
+  private layoutWorldHudTexts(): void {
+    if (this.shrinePrompt) {
+      placeWorldHudText(this, this.shrinePrompt, "bottom", 48);
+    }
+    if (this.gatherToast) {
+      placeWorldHudText(this, this.gatherToast, "top", 120);
+    }
+    if (this.questToast) {
+      placeWorldHudText(this, this.questToast, "top", 120);
     }
   }
 
@@ -561,11 +580,12 @@ export class IsometricScene extends Phaser.Scene {
 
     if (this.shrinePrompt) {
       this.shrinePrompt.setText(label);
+      placeWorldHudText(this, this.shrinePrompt, "bottom", 48);
       return;
     }
 
     this.shrinePrompt = this.add
-      .text(this.scale.width / 2, this.scale.height - 48, label, {
+      .text(0, 0, label, {
         color: "#1f4050",
         backgroundColor: "#fff8ecdd",
         fontFamily: "Source Sans 3, system-ui, sans-serif",
@@ -574,8 +594,8 @@ export class IsometricScene extends Phaser.Scene {
         padding: { x: 14, y: 8 },
       })
       .setOrigin(0.5)
-      .setScrollFactor(0)
       .setDepth(10_001);
+    placeWorldHudText(this, this.shrinePrompt, "bottom", 48);
   }
 
   private getNearbyGatherProp() {
@@ -663,7 +683,7 @@ export class IsometricScene extends Phaser.Scene {
   private showGatherToast(message: string, ok: boolean): void {
     this.gatherToast?.destroy();
     this.gatherToast = this.add
-      .text(this.scale.width / 2, 120, message, {
+      .text(0, 0, message, {
         color: ok ? "#d8f0c0" : "#f0d0c0",
         backgroundColor: "#2a2a3e",
         fontFamily: "system-ui, sans-serif",
@@ -672,8 +692,8 @@ export class IsometricScene extends Phaser.Scene {
         align: "center",
       })
       .setOrigin(0.5, 0)
-      .setScrollFactor(0)
       .setDepth(10_001);
+    placeWorldHudText(this, this.gatherToast, "top", 120);
 
     this.time.delayedCall(1800, () => {
       this.gatherToast?.destroy();
@@ -714,7 +734,7 @@ export class IsometricScene extends Phaser.Scene {
 
     this.questToast?.destroy();
     this.questToast = this.add
-      .text(this.scale.width / 2, 120, message, {
+      .text(0, 0, message, {
         color: "#f0e6d2",
         backgroundColor: "#2a2a3e",
         fontFamily: "system-ui, sans-serif",
@@ -724,8 +744,8 @@ export class IsometricScene extends Phaser.Scene {
         wordWrap: { width: 360 },
       })
       .setOrigin(0.5, 0)
-      .setScrollFactor(0)
       .setDepth(10_001);
+    placeWorldHudText(this, this.questToast, "top", 120);
 
     this.time.delayedCall(2800, () => {
       this.questToast?.destroy();
