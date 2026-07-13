@@ -15,6 +15,20 @@ const PROP_KEYS = [
   "prop-gate-locked",
 ] as const;
 
+const ZONE_IDS = ["grove", "shrine", "village", "overworld"] as const;
+
+const FLOOR_KEYS = [
+  ...ZONE_IDS.flatMap((zoneId) => [
+    `floor-${zoneId}-light`,
+    `floor-${zoneId}-dark`,
+  ]),
+  "floor-path",
+] as const;
+
+const BOUNDARY_KEYS = ZONE_IDS.map(
+  (zoneId) => `boundary-${zoneId}` as const,
+);
+
 /**
  * Queue Imagine-backed PNGs. Missing files fall through to procedural ensure* helpers.
  *
@@ -38,6 +52,14 @@ export function preloadImagineAssets(scene: Phaser.Scene): void {
   }
 
   for (const key of PROP_KEYS) {
+    scene.load.image(key, `assets/world/${key}.png`);
+  }
+
+  for (const key of FLOOR_KEYS) {
+    scene.load.image(key, `assets/world/${key}.png`);
+  }
+
+  for (const key of BOUNDARY_KEYS) {
     scene.load.image(key, `assets/world/${key}.png`);
   }
 }

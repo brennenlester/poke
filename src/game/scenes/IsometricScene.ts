@@ -11,6 +11,8 @@ import {
   getFloorTextureKey,
 } from "../render/worldTextures";
 import {
+  BOUNDARY_DISPLAY,
+  FLOOR_DISPLAY,
   PROP_DISPLAY,
   fitDisplay,
 } from "../render/displaySizes";
@@ -461,6 +463,7 @@ export class IsometricScene extends Phaser.Scene {
         const tile = this.add
           .image(screen.x, screen.y, textureKey)
           .setOrigin(0.5, 0.5);
+        fitDisplay(tile, FLOOR_DISPLAY);
 
         if (tileType === TileType.OverworldGate && !transitionSet.has(`${x},${y}`)) {
           tile.setTint(
@@ -521,6 +524,7 @@ export class IsometricScene extends Phaser.Scene {
         const block = this.add
           .image(screen.x, screen.y + TILE_HEIGHT / 2 - 2, boundaryKey)
           .setOrigin(0.5, 1);
+        fitDisplay(block, BOUNDARY_DISPLAY);
         block.setDepth(depthForGridCell(x, y, PROP_LAYER));
       }
     }

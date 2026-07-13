@@ -14,19 +14,6 @@ const ZONE_PALETTES: Record<ZoneId, ZonePalette> = {
 const BOUNDARY_HEIGHT = 56;
 const OUTLINE = 0x1a3040;
 
-function removeStaleTextures(scene: Phaser.Scene, zoneId: ZoneId): void {
-  // Keep Imagine-backed props / boundaries if already loaded; only refresh floors.
-  for (const variant of ["light", "dark"] as const) {
-    const key = `floor-${zoneId}-${variant}`;
-    if (scene.textures.exists(key)) {
-      scene.textures.remove(key);
-    }
-  }
-  if (scene.textures.exists("floor-path")) {
-    scene.textures.remove("floor-path");
-  }
-}
-
 function drawSquareTile(
   g: Phaser.GameObjects.Graphics,
   w: number,
@@ -45,6 +32,10 @@ function generateFloorTextures(scene: Phaser.Scene, zoneId: ZoneId): void {
   const palette = ZONE_PALETTES[zoneId];
   for (const variant of ["light", "dark"] as const) {
     const key = `floor-${zoneId}-${variant}`;
+    // Keep Imagine-preloaded floors; only synthesize when missing.
+    if (scene.textures.exists(key)) {
+      continue;
+    }
     const base = variant === "light" ? palette.light : palette.dark;
     const g = scene.make.graphics({ x: 0, y: 0 });
     drawSquareTile(g, TILE_WIDTH, TILE_HEIGHT, base, palette.edge);
@@ -430,7 +421,6 @@ export function getBoundaryTextureKey(zoneId: ZoneId): string {
 }
 
 export function ensureWorldTextures(scene: Phaser.Scene, zoneId: ZoneId): void {
-  removeStaleTextures(scene, zoneId);
   generateWallTextures(scene);
   generatePropTextures(scene);
   generateFloorTextures(scene, zoneId);
