@@ -62,4 +62,12 @@ export function preloadImagineAssets(scene: Phaser.Scene): void {
   for (const key of BOUNDARY_KEYS) {
     scene.load.image(key, `assets/world/${key}.png`);
   }
+
+  for (const key of [
+    "arena-sky",
+    "arena-hills",
+    "arena-platform",
+  ] as const) {
+    scene.load.image(key, `assets/world/${key}.png`);
+  }
 }
