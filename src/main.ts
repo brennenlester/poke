@@ -45,7 +45,11 @@ if (import.meta.env.DEV && !invite) {
   const params = new URLSearchParams(window.location.search);
   const creatureId = params.get("encounter") ?? params.get("spar");
   if (creatureId) {
-    game.events.once("ready", () => {
+    const launchPreview = (): void => {
+      if (!game.scene.isActive("IsometricScene")) {
+        window.setTimeout(launchPreview, 40);
+        return;
+      }
       const iso = game.scene.getScene("IsometricScene") as Phaser.Scene;
       if (params.has("spar")) {
         iso.scene.launch("BattleScene", {
@@ -62,6 +66,7 @@ if (import.meta.env.DEV && !invite) {
         iso.scene.launch("EncounterScene", { creatureId });
       }
       iso.scene.pause();
-    });
+    };
+    game.events.once("ready", launchPreview);
   }
 }

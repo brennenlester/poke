@@ -260,8 +260,9 @@ const CREATURE_DRAWERS: Record<string, CreatureDrawer> = {
 
 export function ensureCreatureTextures(scene: Phaser.Scene): void {
   for (const creature of CREATURES) {
+    // Prefer Imagine PNGs loaded in PreloadScene; procedural only as fallback.
     if (scene.textures.exists(creature.spriteKey)) {
-      scene.textures.remove(creature.spriteKey);
+      continue;
     }
 
     const g = scene.make.graphics({ x: 0, y: 0 });

@@ -1,4 +1,5 @@
 import Phaser from "phaser";
+import { PLAYER_DISPLAY, fitDisplay } from "./displaySizes";
 
 const FRAME_WIDTH = 48;
 const FRAME_HEIGHT = 64;
@@ -90,14 +91,77 @@ function generateFrame(scene: Phaser.Scene, facing: Facing, frame: number): void
   g.destroy();
 }
 
+/**
+ * Imagine walk PNGs drift into different outfits/faces per frame.
+ * Derive walk frames from the idle texture with a clear stride pose.
+ */
+function deriveWalkFramesFromIdle(scene: Phaser.Scene, facing: Facing): void {
+  const idleKey = textureKey(facing, 0);
+  if (!scene.textures.exists(idleKey)) {
+    return;
+  }
+
+  const source = scene.textures.get(idleKey).getSourceImage() as
+    | HTMLImageElement
+    | HTMLCanvasElement;
+  const width = source.width || FRAME_WIDTH;
+  const height = source.height || FRAME_HEIGHT;
+
+  // Offsets are in source pixels; ~8–10px on-screen after downscale to 48×64.
+  const stepX = Math.max(10, Math.round(width * 0.06));
+  const stepY = Math.max(14, Math.round(height * 0.07));
+  const poses: Record<number, { x: number; y: number; rot: number; squash: number }> = {
+    1: { x: -stepX, y: -stepY, rot: -0.08, squash: 0.92 },
+    2: { x: stepX, y: -stepY, rot: 0.08, squash: 0.92 },
+  };
+
+  for (const frame of [1, 2] as const) {
+    const key = textureKey(facing, frame);
+    if (scene.textures.exists(key)) {
+      scene.textures.remove(key);
+    }
+    const canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) {
+      continue;
+    }
+    const pose = poses[frame];
+    ctx.clearRect(0, 0, width, height);
+    ctx.save();
+    // Pivot near the feet so lean/squash reads as a step.
+    ctx.translate(width / 2 + pose.x, height * 0.92 + pose.y);
+    ctx.rotate(pose.rot);
+    ctx.scale(1, pose.squash);
+    ctx.drawImage(source, -width / 2, -height * 0.92);
+    ctx.restore();
+    scene.textures.addCanvas(key, canvas);
+  }
+}
+
 export function getPlayerIdleTextureKey(facing: Facing = "south"): string {
   return textureKey(facing, 0);
 }
 
 export function ensurePlayerAnims(scene: Phaser.Scene): void {
   for (const facing of FACINGS) {
-    for (let frame = 0; frame < 3; frame += 1) {
-      generateFrame(scene, facing, frame);
+    // Prefer Imagine idle; fill gaps procedurally, then derive walk from idle.
+    generateFrame(scene, facing, 0);
+    if (scene.textures.exists(textureKey(facing, 0))) {
+      const src = scene.textures.get(textureKey(facing, 0)).getSourceImage() as {
+        width?: number;
+      };
+      // Idle from Imagine is large; walk PNGs are inconsistent — always derive.
+      if (src.width && src.width > FRAME_WIDTH) {
+        deriveWalkFramesFromIdle(scene, facing);
+      } else {
+        generateFrame(scene, facing, 1);
+        generateFrame(scene, facing, 2);
+      }
+    } else {
+      generateFrame(scene, facing, 1);
+      generateFrame(scene, facing, 2);
     }
 
     const idleKey = `player-idle-${facing}`;
@@ -111,15 +175,27 @@ export function ensurePlayerAnims(scene: Phaser.Scene): void {
     }
 
     const walkKey = `player-walk-${facing}`;
-    if (!scene.anims.exists(walkKey)) {
-      scene.anims.create({
-        key: walkKey,
-        frames: [0, 1, 2, 1].map((frame) => ({
-          key: textureKey(facing, frame),
-        })),
-        frameRate: 9,
-        repeat: -1,
-      });
+    // Recreate walk anim so it picks up derived frames after a hot reload.
+    if (scene.anims.exists(walkKey)) {
+      scene.anims.remove(walkKey);
     }
+    scene.anims.create({
+      key: walkKey,
+      frames: [0, 1, 2, 1].map((frame) => ({
+        key: textureKey(facing, frame),
+      })),
+      frameRate: 8,
+      repeat: -1,
+    });
   }
+}
+
+/** Keep display size stable when anim swaps texture keys. */
+export function bindPlayerDisplaySize(
+  sprite: Phaser.GameObjects.Sprite,
+): void {
+  fitDisplay(sprite, PLAYER_DISPLAY);
+  sprite.on("animationupdate", () => {
+    fitDisplay(sprite, PLAYER_DISPLAY);
+  });
 }

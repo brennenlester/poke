@@ -11,42 +11,19 @@ const ZONE_PALETTES: Record<ZoneId, ZonePalette> = {
   overworld: { light: 0x78c8e0, dark: 0x4fa8c8, accent: 0xb8e8f0, edge: 0x387898 },
 };
 
-const WORLD_TEXTURE_KEYS = [
-  "floor-path",
-  "boundary-grove",
-  "boundary-shrine",
-  "boundary-village",
-  "boundary-overworld",
-  "prop-tree",
-  "prop-fern",
-  "prop-shrine-altar",
-  "prop-standing-stone",
-  "prop-pebble-pile",
-  "prop-hearth",
-  "prop-cottage",
-  "prop-gate",
-  "prop-gate-locked",
-] as const;
-
 const BOUNDARY_HEIGHT = 56;
 const OUTLINE = 0x1a3040;
 
 function removeStaleTextures(scene: Phaser.Scene, zoneId: ZoneId): void {
-  for (const key of WORLD_TEXTURE_KEYS) {
-    if (scene.textures.exists(key)) {
-      scene.textures.remove(key);
-    }
-  }
-  for (const key of ["player-south", "player-north", "player-east", "player-west"]) {
-    if (scene.textures.exists(key)) {
-      scene.textures.remove(key);
-    }
-  }
+  // Keep Imagine-backed props / boundaries if already loaded; only refresh floors.
   for (const variant of ["light", "dark"] as const) {
     const key = `floor-${zoneId}-${variant}`;
     if (scene.textures.exists(key)) {
       scene.textures.remove(key);
     }
+  }
+  if (scene.textures.exists("floor-path")) {
+    scene.textures.remove("floor-path");
   }
 }
 

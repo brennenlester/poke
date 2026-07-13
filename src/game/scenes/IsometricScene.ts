@@ -10,7 +10,12 @@ import {
   getBoundaryTextureKey,
   getFloorTextureKey,
 } from "../render/worldTextures";
-import { ensurePlayerAnims } from "../render/playerAnims";
+import {
+  PROP_DISPLAY,
+  fitDisplay,
+} from "../render/displaySizes";
+import { resizeGameForDisplay } from "../render/pixelRatio";
+import { ensurePlayerAnims, bindPlayerDisplaySize } from "../render/playerAnims";
 import { rollWildCreature } from "../encounters/tables";
 import {
   consumeQuestToast,
@@ -92,6 +97,7 @@ export class IsometricScene extends Phaser.Scene {
   private layoutLocked = false;
   private isMoving = false;
   private playerBaseY = 0;
+  private walkPhase = 0;
 
   constructor() {
     super({ key: "IsometricScene" });
@@ -187,11 +193,14 @@ export class IsometricScene extends Phaser.Scene {
 
     if (dx === 0 && dy === 0) {
       this.isMoving = false;
+      this.walkPhase = 0;
       this.playPlayerAnimation();
+      this.syncPlayerToGrid();
       return;
     }
 
     this.isMoving = true;
+    this.walkPhase += delta;
     this.updateFacing(dx, dy);
     this.playPlayerAnimation();
 
@@ -207,7 +216,6 @@ export class IsometricScene extends Phaser.Scene {
     if (canOccupy(zone, nextX, nextY)) {
       this.playerGridX = nextX;
       this.playerGridY = nextY;
-      this.syncPlayerToGrid();
       updateHostPosition(
         this.currentZoneId,
         this.playerGridX,
@@ -216,6 +224,7 @@ export class IsometricScene extends Phaser.Scene {
       this.tryZoneTransition(zone);
       this.tryRandomEncounter(step);
     }
+    this.syncPlayerToGrid();
   }
 
   private updateFacing(dx: number, dy: number): void {
@@ -298,6 +307,7 @@ export class IsometricScene extends Phaser.Scene {
     this.player = this.add
       .sprite(0, 0, `player-${this.playerFacing}-0`)
       .setOrigin(0.5, 1);
+    bindPlayerDisplaySize(this.player);
     this.syncPlayerToGrid();
     this.playPlayerAnimation();
     this.cameras.main.startFollow(this.player, true, 0.08, 0.08);
@@ -377,6 +387,7 @@ export class IsometricScene extends Phaser.Scene {
       gameEl.style.height = `${boardDisplaySize}px`;
     }
     updateStatusPanel(zone);
+    resizeGameForDisplay(this, boardDisplaySize);
     this.scale.refresh();
 
     const cam = this.cameras.main;
@@ -510,6 +521,10 @@ export class IsometricScene extends Phaser.Scene {
       const propSprite = this.add
         .image(screen.x, screen.y + TILE_HEIGHT / 2 - 2, key)
         .setOrigin(0.5, 1);
+      const propSize = PROP_DISPLAY[key];
+      if (propSize) {
+        fitDisplay(propSprite, propSize);
+      }
       propSprite.setDepth(depthForGridCell(prop.x, prop.y, PROP_LAYER));
     }
   }
@@ -670,7 +685,12 @@ export class IsometricScene extends Phaser.Scene {
     const screen = this.toScreen(this.playerGridX, this.playerGridY);
 
     this.playerBaseY = screen.y + TILE_HEIGHT / 2 - 2;
-    this.player.setPosition(screen.x, this.playerBaseY);
+    // Visible stride bob while moving (Imagine walk frames stay design-locked).
+    const bob = this.isMoving
+      ? Math.abs(Math.sin(this.walkPhase / 85)) * 5
+      : 0;
+    const sway = this.isMoving ? Math.sin(this.walkPhase / 85) * 2 : 0;
+    this.player.setPosition(screen.x + sway, this.playerBaseY - bob);
     this.player.setDepth(PLAYER_DEPTH);
   }
 
