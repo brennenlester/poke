@@ -72,6 +72,8 @@ export function parseInviteFromUrl(): WorldSnapshot | null {
 export function clearJoinParamAndReload(): void {
   const url = new URL(window.location.href);
   url.searchParams.delete("join");
+  // Match "Start a fresh game" — avoid restoring a prior host save after a bad invite.
+  url.searchParams.set("new", "1");
   const query = url.searchParams.toString();
   window.location.replace(`${url.pathname}${query ? `?${query}` : ""}${url.hash}`);
 }
