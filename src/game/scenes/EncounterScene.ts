@@ -1,4 +1,5 @@
 import Phaser from "phaser";
+import { playEncounterSfx } from "../audio/gameAudio";
 import { getCreatureDefinition } from "../creatures/catalog";
 import { addToParty, hasCreature } from "../creatures/party";
 import { ensureCreatureTextures } from "../creatures/sprites";
@@ -35,6 +36,7 @@ export class EncounterScene extends Phaser.Scene {
   create(): void {
     bindOverlayPixelRatio(this);
     ensureCreatureTextures(this);
+    playEncounterSfx(this);
     const def = getCreatureDefinition(this.creatureId);
 
     this.cameras.main.fadeIn(160, 255, 255, 255);

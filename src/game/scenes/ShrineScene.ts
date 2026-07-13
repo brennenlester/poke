@@ -1,4 +1,5 @@
 import Phaser from "phaser";
+import { playCraftSfx } from "../audio/gameAudio";
 import {
   canCraft,
   craftItem,
@@ -324,6 +325,7 @@ export class ShrineScene extends Phaser.Scene {
       btn.on("pointerdown", () => {
         if (craftItem(recipe)) {
           recordQuestEvent({ type: "craft_item" });
+          playCraftSfx(this);
           this.setStatus(`Crafted ${recipe.name}!`);
           this.renderTabContent();
         }

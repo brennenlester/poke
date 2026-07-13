@@ -1,5 +1,13 @@
 import Phaser from "phaser";
 import {
+  ensureGroveMusic,
+  initMuteControl,
+  playGatherSfx,
+  playShrineSfx,
+  playStepSfx,
+  unlockAudioFromGesture,
+} from "../audio/gameAudio";
+import {
   TILE_HEIGHT,
   TILE_WIDTH,
   depthForGridCell,
@@ -134,6 +142,9 @@ export class IsometricScene extends Phaser.Scene {
     this.inviteKey = this.input.keyboard!.addKey("I");
     this.interactKey = this.input.keyboard!.addKey("E");
     initTouchControls();
+    initMuteControl(this);
+    ensureGroveMusic(this);
+    this.input.on("pointerdown", () => unlockAudioFromGesture(this));
 
     this.loadZone(this.currentZoneId);
 
@@ -184,6 +195,7 @@ export class IsometricScene extends Phaser.Scene {
       Phaser.Input.Keyboard.JustDown(this.interactKey) ||
       consumeTouchInteract()
     ) {
+      unlockAudioFromGesture(this);
       if (!this.tryShrineInteract()) {
         this.tryGatherInteract();
       }
@@ -235,6 +247,7 @@ export class IsometricScene extends Phaser.Scene {
     if (canOccupy(zone, nextX, nextY)) {
       this.playerGridX = nextX;
       this.playerGridY = nextY;
+      playStepSfx(this, _time);
       updateHostPosition(
         this.currentZoneId,
         this.playerGridX,
@@ -644,6 +657,7 @@ export class IsometricScene extends Phaser.Scene {
     }
     this.inShrine = true;
     setTouchControlsEnabled(false);
+    playShrineSfx(this);
     if (this.shrinePrompt) {
       this.shrinePrompt.destroy();
       this.shrinePrompt = undefined;
@@ -672,6 +686,7 @@ export class IsometricScene extends Phaser.Scene {
     updateStatusPanel(getZone(this.currentZoneId));
     this.showGatherToast(result.message, result.ok);
     if (result.ok) {
+      playGatherSfx(this);
       this.spawnHarvestBurst(prop.x, prop.y, prop.action.materialId);
     }
     this.updateInteractPrompt();

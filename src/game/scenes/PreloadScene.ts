@@ -1,4 +1,5 @@
 import Phaser from "phaser";
+import { preloadGameAudio } from "../audio/gameAudio";
 import { preloadImagineAssets } from "../render/imagineAssets";
 
 export class PreloadScene extends Phaser.Scene {
@@ -12,6 +13,7 @@ export class PreloadScene extends Phaser.Scene {
       /* intentional no-op */
     });
     preloadImagineAssets(this);
+    preloadGameAudio(this);
   }
 
   create(): void {

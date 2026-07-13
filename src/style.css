@@ -111,6 +111,28 @@ body,
   margin-top: 10px;
   display: flex;
   justify-content: flex-end;
+  gap: 8px;
+}
+
+.status-mute-btn {
+  border: 2px solid #6eb8a8;
+  background: #e8f7f2;
+  color: #2a6058;
+  font-family: "Source Sans 3", sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 7px 14px;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.status-mute-btn:hover {
+  background: #d8f0e8;
+}
+
+.status-mute-btn:focus-visible {
+  outline: 2px solid #6eb8a8;
+  outline-offset: 2px;
 }
 
 .status-reset-btn {
