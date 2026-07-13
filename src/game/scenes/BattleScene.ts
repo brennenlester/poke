@@ -350,9 +350,9 @@ export class BattleScene extends Phaser.Scene {
 
     const cancel = this.add
       .text(cx, panelY + 80, "Cancel", {
-        color: "#1a1a2e",
-        backgroundColor: "#c8b8a0",
-        fontFamily: "system-ui, sans-serif",
+        color: "#1a3040",
+        backgroundColor: "#f0d8a8",
+        fontFamily: "Source Sans 3, system-ui, sans-serif",
         fontSize: "14px",
         padding: { x: 10, y: 6 },
       })
@@ -388,15 +388,16 @@ export class BattleScene extends Phaser.Scene {
     const armed = weaponId ? buildArmedWanderer(weaponId) : undefined;
 
     const panel = this.add
-      .rectangle(cx, panelY, 340, 180, 0x2a2a3e, 0.98)
-      .setStrokeStyle(2, 0xf0e6d2);
+      .rectangle(cx, panelY, 340, 180, 0xfff8ec, 0.98)
+      .setStrokeStyle(3, 0x6eb8a8);
     this.wandererFallbackObjects.push(panel);
 
     const title = this.add
       .text(cx, panelY - 50, "Your party has fainted!", {
-        color: "#f0e6d2",
-        fontFamily: "system-ui, sans-serif",
+        color: "#2a4050",
+        fontFamily: "Source Sans 3, system-ui, sans-serif",
         fontSize: "16px",
+        fontStyle: "bold",
       })
       .setOrigin(0.5);
     this.wandererFallbackObjects.push(title);
@@ -407,8 +408,8 @@ export class BattleScene extends Phaser.Scene {
         panelY - 20,
         armed ? `Fight as ${armed.name}?` : "No weapon available.",
         {
-          color: "#c8b8a0",
-          fontFamily: "system-ui, sans-serif",
+          color: "#5a7888",
+          fontFamily: "Source Sans 3, system-ui, sans-serif",
           fontSize: "14px",
           align: "center",
           wordWrap: { width: 300 },
@@ -420,10 +421,11 @@ export class BattleScene extends Phaser.Scene {
     if (armed) {
       const fight = this.add
         .text(cx, panelY + 30, "Fight as Wanderer", {
-          color: "#1a1a2e",
-          backgroundColor: "#c8dce8",
-          fontFamily: "system-ui, sans-serif",
+          color: "#1a3040",
+          backgroundColor: "#7ec8e8",
+          fontFamily: "Source Sans 3, system-ui, sans-serif",
           fontSize: "16px",
+          fontStyle: "bold",
           padding: { x: 16, y: 8 },
         })
         .setOrigin(0.5)
@@ -434,9 +436,9 @@ export class BattleScene extends Phaser.Scene {
 
     const retreat = this.add
       .text(cx, panelY + 70, "Retreat", {
-        color: "#1a1a2e",
-        backgroundColor: "#c8b8a0",
-        fontFamily: "system-ui, sans-serif",
+        color: "#1a3040",
+        backgroundColor: "#f0d8a8",
+        fontFamily: "Source Sans 3, system-ui, sans-serif",
         fontSize: "14px",
         padding: { x: 12, y: 6 },
       })
