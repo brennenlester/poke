@@ -743,8 +743,12 @@ export class IsometricScene extends Phaser.Scene {
     const screen = this.toScreen(this.playerGridX, this.playerGridY);
 
     this.playerBaseY = screen.y + TILE_HEIGHT / 2 - 2;
-    // Walk motion comes from Imagine frame anims — no bob/lean position hacks.
-    this.player.setPosition(screen.x, this.playerBaseY);
+    // Small bob synced to walk frames — keeps side/back strides from reading as a skate.
+    let bob = 0;
+    if (this.isMoving && this.player?.anims.currentFrame) {
+      bob = this.player.anims.currentFrame.index % 2 === 0 ? 0 : -2;
+    }
+    this.player.setPosition(screen.x, this.playerBaseY + bob);
     this.player.setDepth(PLAYER_DEPTH);
   }
 

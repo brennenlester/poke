@@ -48,6 +48,19 @@ def process(src_name, dest_rel, max_w, max_h, pad=4):
     print(f"ok {dest_rel}")
 
 
+def strip_extra_vs_reference(ref: Image.Image, posed: Image.Image) -> Image.Image:
+    """Clear posed pixels that are empty on ref (e.g. staff that appears only on walk2)."""
+    ref_px = ref.convert("RGBA").load()
+    out = posed.convert("RGBA").copy()
+    out_px = out.load()
+    w, h = out.size
+    for y in range(h):
+        for x in range(w):
+            if ref_px[x, y][3] < 8 and out_px[x, y][3] > 8:
+                out_px[x, y] = (0, 0, 0, 0)
+    return out
+
+
 def main():
     for facing in ["south", "north", "east", "west"]:
         # Style D walk1 is canonical idle + stride frame 1 (outfit-matched).
@@ -64,33 +77,47 @@ def main():
             64 * SCALE,
         )
 
-    # Stride frame 2: Imagine walk2 sheets drift outfit/props, so lock to walk1.
-    # Front/back: horizontal flip gives opposite contact with same outfit.
-    # East: duplicate walk1 (side flip would reverse facing; art follow-up later).
-    # West: Imagine walk2 is outfit-matched enough to use as the second pose.
-    from PIL import Image as _Image
-
+    # Stride frame 2 — prefer readable limb change without different-trainer flash.
     player = DST / "player"
-    for facing in ("south", "north"):
-        im = _Image.open(player / f"player-{facing}-1.png").convert("RGBA")
-        im.transpose(_Image.Transpose.FLIP_LEFT_RIGHT).save(
-            player / f"player-{facing}-2.png",
-            optimize=True,
-        )
-        print(f"ok player/player-{facing}-2.png (hflip walk1)")
 
-    _Image.open(player / "player-east-1.png").convert("RGBA").save(
-        player / "player-east-2.png",
+    # South: hflip walk1 (opposite contact, same outfit).
+    Image.open(player / "player-south-1.png").convert("RGBA").transpose(
+        Image.Transpose.FLIP_LEFT_RIGHT
+    ).save(player / "player-south-2.png", optimize=True)
+    print("ok player/player-south-2.png (hflip walk1)")
+
+    # North: Imagine walk2 with staff/extras stripped against walk1.
+    process(
+        "player-north-walk2.png",
+        "player/player-north-2.png",
+        48 * SCALE,
+        64 * SCALE,
+    )
+    north1 = Image.open(player / "player-north-1.png").convert("RGBA")
+    north2 = Image.open(player / "player-north-2.png").convert("RGBA")
+    strip_extra_vs_reference(north1, north2).save(
+        player / "player-north-2.png",
         optimize=True,
     )
-    print("ok player/player-east-2.png (copy walk1; side art follow-up)")
+    print("ok player/player-north-2.png (walk2 staff-stripped)")
 
+    # West: Imagine walk2 (outfit-matched side stride).
     process(
         "player-west-walk2.png",
         "player/player-west-2.png",
         48 * SCALE,
         64 * SCALE,
     )
+
+    # East: mirror west walk cycle so right-facing has real limb motion.
+    for frame in (0, 1, 2):
+        src = Image.open(player / f"player-west-{frame}.png").convert("RGBA")
+        src.transpose(Image.Transpose.FLIP_LEFT_RIGHT).save(
+            player / f"player-east-{frame}.png",
+            optimize=True,
+        )
+        print(f"ok player/player-east-{frame}.png (hflip west-{frame})")
+
     for c in [
         "mossling", "ember-wisp", "brook-nymph", "stone-hound", "mist-serpent",
         "rootwalker", "lantern-fox", "thunder-finch", "bramblewarden", "hearthflame",

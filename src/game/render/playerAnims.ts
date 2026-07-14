@@ -132,7 +132,7 @@ export function ensurePlayerAnims(scene: Phaser.Scene): void {
       frames: [1, 2, 1, 2].map((frame) => ({
         key: textureKey(facing, frame),
       })),
-      frameRate: 8,
+      frameRate: 10,
       repeat: -1,
     });
   }
