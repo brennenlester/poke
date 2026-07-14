@@ -64,33 +64,33 @@ def main():
             64 * SCALE,
         )
 
-    # Stride frame 2: Imagine walk2 sheets drift outfit/props, so lock to walk1.
-    # Front/back: horizontal flip gives opposite contact with same outfit.
-    # East: duplicate walk1 (side flip would reverse facing; art follow-up later).
-    # West: Imagine walk2 is outfit-matched enough to use as the second pose.
-    from PIL import Image as _Image
-
+    # Stride frame 2 — prefer readable limb change without different-trainer flash.
     player = DST / "player"
+
+    # South/North: hflip walk1 (opposite contact, same outfit; no limb clipping).
     for facing in ("south", "north"):
-        im = _Image.open(player / f"player-{facing}-1.png").convert("RGBA")
-        im.transpose(_Image.Transpose.FLIP_LEFT_RIGHT).save(
-            player / f"player-{facing}-2.png",
-            optimize=True,
-        )
+        Image.open(player / f"player-{facing}-1.png").convert("RGBA").transpose(
+            Image.Transpose.FLIP_LEFT_RIGHT
+        ).save(player / f"player-{facing}-2.png", optimize=True)
         print(f"ok player/player-{facing}-2.png (hflip walk1)")
 
-    _Image.open(player / "player-east-1.png").convert("RGBA").save(
-        player / "player-east-2.png",
-        optimize=True,
-    )
-    print("ok player/player-east-2.png (copy walk1; side art follow-up)")
-
+    # West: Imagine walk2 (outfit-matched side stride).
     process(
         "player-west-walk2.png",
         "player/player-west-2.png",
         48 * SCALE,
         64 * SCALE,
     )
+
+    # East: mirror west walk cycle so right-facing has real limb motion.
+    for frame in (0, 1, 2):
+        src = Image.open(player / f"player-west-{frame}.png").convert("RGBA")
+        src.transpose(Image.Transpose.FLIP_LEFT_RIGHT).save(
+            player / f"player-east-{frame}.png",
+            optimize=True,
+        )
+        print(f"ok player/player-east-{frame}.png (hflip west-{frame})")
+
     for c in [
         "mossling", "ember-wisp", "brook-nymph", "stone-hound", "mist-serpent",
         "rootwalker", "lantern-fox", "thunder-finch", "bramblewarden", "hearthflame",
