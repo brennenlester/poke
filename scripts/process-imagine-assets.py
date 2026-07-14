@@ -48,19 +48,6 @@ def process(src_name, dest_rel, max_w, max_h, pad=4):
     print(f"ok {dest_rel}")
 
 
-def strip_extra_vs_reference(ref: Image.Image, posed: Image.Image) -> Image.Image:
-    """Clear posed pixels that are empty on ref (e.g. staff that appears only on walk2)."""
-    ref_px = ref.convert("RGBA").load()
-    out = posed.convert("RGBA").copy()
-    out_px = out.load()
-    w, h = out.size
-    for y in range(h):
-        for x in range(w):
-            if ref_px[x, y][3] < 8 and out_px[x, y][3] > 8:
-                out_px[x, y] = (0, 0, 0, 0)
-    return out
-
-
 def main():
     for facing in ["south", "north", "east", "west"]:
         # Style D walk1 is canonical idle + stride frame 1 (outfit-matched).
@@ -80,26 +67,12 @@ def main():
     # Stride frame 2 — prefer readable limb change without different-trainer flash.
     player = DST / "player"
 
-    # South: hflip walk1 (opposite contact, same outfit).
-    Image.open(player / "player-south-1.png").convert("RGBA").transpose(
-        Image.Transpose.FLIP_LEFT_RIGHT
-    ).save(player / "player-south-2.png", optimize=True)
-    print("ok player/player-south-2.png (hflip walk1)")
-
-    # North: Imagine walk2 with staff/extras stripped against walk1.
-    process(
-        "player-north-walk2.png",
-        "player/player-north-2.png",
-        48 * SCALE,
-        64 * SCALE,
-    )
-    north1 = Image.open(player / "player-north-1.png").convert("RGBA")
-    north2 = Image.open(player / "player-north-2.png").convert("RGBA")
-    strip_extra_vs_reference(north1, north2).save(
-        player / "player-north-2.png",
-        optimize=True,
-    )
-    print("ok player/player-north-2.png (walk2 staff-stripped)")
+    # South/North: hflip walk1 (opposite contact, same outfit; no limb clipping).
+    for facing in ("south", "north"):
+        Image.open(player / f"player-{facing}-1.png").convert("RGBA").transpose(
+            Image.Transpose.FLIP_LEFT_RIGHT
+        ).save(player / f"player-{facing}-2.png", optimize=True)
+        print(f"ok player/player-{facing}-2.png (hflip walk1)")
 
     # West: Imagine walk2 (outfit-matched side stride).
     process(

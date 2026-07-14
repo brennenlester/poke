@@ -7,7 +7,7 @@ export const IMAGINE_ATLAS_KEY = "imagine-atlas";
  * fall through to procedural ensure* helpers after promoteAtlasFrames runs.
  *
  * Trainer frames: Style D walk1 → `player-*-0`/`*-1`.
- * Frame 2: S=hflip(walk1); N=walk2 staff-stripped; W=walk2; E=hflip(west cycle).
+ * Frame 2: S/N=hflip(walk1); W=walk2; E=hflip(west cycle).
  * Subtle walk bob in IsometricScene sells stride on side/back views.
  */
 export function preloadImagineAssets(scene: Phaser.Scene): void {
