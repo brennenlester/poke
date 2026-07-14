@@ -13,7 +13,7 @@ import { UNARMED_WANDERER } from "../battle/wandererWeapons";
 import { isVisitorMode } from "../world/worldSession";
 
 const PANEL_WIDTH = 440;
-const PANEL_HEIGHT = 300;
+const PANEL_HEIGHT = 430;
 const PANEL_PADDING = 28;
 
 const TEXT_STYLE = {
@@ -82,7 +82,7 @@ export class EncounterScene extends Phaser.Scene {
       this.add
         .image(
           panelX,
-          panelY - 92,
+          panelY - 110,
           resolveCreaturePoseTexture(this, def.spriteKey, "encounter"),
         )
         .setOrigin(0.5),
@@ -91,7 +91,7 @@ export class EncounterScene extends Phaser.Scene {
 
     this.addPanelText(
       panelX,
-      panelY - 8,
+      panelY + 8,
       `A wild ${def.name} appeared!`,
       innerWidth,
       {
@@ -103,7 +103,7 @@ export class EncounterScene extends Phaser.Scene {
 
     this.addPanelText(
       panelX,
-      panelY + 24,
+      panelY + 40,
       `Type: ${def.folkloreType}`,
       innerWidth,
       {
@@ -112,7 +112,7 @@ export class EncounterScene extends Phaser.Scene {
       },
     );
 
-    const buttonY = panelY + 84;
+    const buttonY = panelY + 104;
     const buttonLabels = ["Befriend", "Spar", "Flee"] as const;
     const buttonActions = [
       () => this.tryBefriend(),
@@ -196,7 +196,7 @@ export class EncounterScene extends Phaser.Scene {
   private showResult(message: string): void {
     const text = this.addPanelText(
       DESIGN_SIZE / 2,
-      DESIGN_SIZE / 2 + 128,
+      DESIGN_SIZE / 2 + 160,
       message,
       PANEL_WIDTH - PANEL_PADDING * 2,
       {

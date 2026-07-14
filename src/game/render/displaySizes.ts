@@ -20,7 +20,7 @@ export const PROP_DISPLAY: Record<string, { width: number; height: number }> = {
 export const FLOOR_DISPLAY = { width: 48, height: 48 } as const;
 export const BOUNDARY_DISPLAY = { width: 48, height: 56 } as const;
 
-export const ENCOUNTER_CREATURE_DISPLAY = { width: 120, height: 130 } as const;
+export const ENCOUNTER_CREATURE_DISPLAY = { width: 180, height: 195 } as const;
 export const BATTLE_CREATURE_DISPLAY = { width: 112, height: 122 } as const;
 export const BATTLE_PLAYER_DISPLAY = { width: 100, height: 134 } as const;
 
