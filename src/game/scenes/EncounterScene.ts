@@ -6,14 +6,15 @@ import { ensureCreatureTextures } from "../creatures/sprites";
 import { resolveCreaturePoseTexture } from "../creatures/creaturePoses";
 import {
   ENCOUNTER_CREATURE_DISPLAY,
-  fitDisplay,
+  ensureTrimmedTexture,
+  fitContainDisplay,
 } from "../render/displaySizes";
 import { bindOverlayPixelRatio, DESIGN_SIZE } from "../render/pixelRatio";
 import { UNARMED_WANDERER } from "../battle/wandererWeapons";
 import { isVisitorMode } from "../world/worldSession";
 
-const PANEL_WIDTH = 440;
-const PANEL_HEIGHT = 430;
+const PANEL_WIDTH = 460;
+const PANEL_HEIGHT = 500;
 const PANEL_PADDING = 28;
 
 const TEXT_STYLE = {
@@ -78,20 +79,17 @@ export class EncounterScene extends Phaser.Scene {
       18,
     );
 
-    fitDisplay(
-      this.add
-        .image(
-          panelX,
-          panelY - 110,
-          resolveCreaturePoseTexture(this, def.spriteKey, "encounter"),
-        )
-        .setOrigin(0.5),
+    const poseKey = resolveCreaturePoseTexture(this, def.spriteKey, "encounter");
+    const trimmedKey = ensureTrimmedTexture(this, poseKey);
+    // Sit in the upper panel: leave clear air above the title at panelY+70.
+    fitContainDisplay(
+      this.add.image(panelX, panelY - 90, trimmedKey).setOrigin(0.5),
       ENCOUNTER_CREATURE_DISPLAY,
     );
 
     this.addPanelText(
       panelX,
-      panelY + 8,
+      panelY + 70,
       `A wild ${def.name} appeared!`,
       innerWidth,
       {
@@ -103,7 +101,7 @@ export class EncounterScene extends Phaser.Scene {
 
     this.addPanelText(
       panelX,
-      panelY + 40,
+      panelY + 102,
       `Type: ${def.folkloreType}`,
       innerWidth,
       {
@@ -112,7 +110,7 @@ export class EncounterScene extends Phaser.Scene {
       },
     );
 
-    const buttonY = panelY + 104;
+    const buttonY = panelY + 162;
     const buttonLabels = ["Befriend", "Spar", "Flee"] as const;
     const buttonActions = [
       () => this.tryBefriend(),
@@ -196,7 +194,7 @@ export class EncounterScene extends Phaser.Scene {
   private showResult(message: string): void {
     const text = this.addPanelText(
       DESIGN_SIZE / 2,
-      DESIGN_SIZE / 2 + 160,
+      DESIGN_SIZE / 2 + 210,
       message,
       PANEL_WIDTH - PANEL_PADDING * 2,
       {
