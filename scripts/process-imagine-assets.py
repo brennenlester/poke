@@ -63,12 +63,34 @@ def main():
             48 * SCALE,
             64 * SCALE,
         )
-        process(
-            f"player-{facing}-walk2.png",
-            f"player/player-{facing}-2.png",
-            48 * SCALE,
-            64 * SCALE,
+
+    # Stride frame 2: Imagine walk2 sheets drift outfit/props, so lock to walk1.
+    # Front/back: horizontal flip gives opposite contact with same outfit.
+    # East: duplicate walk1 (side flip would reverse facing; art follow-up later).
+    # West: Imagine walk2 is outfit-matched enough to use as the second pose.
+    from PIL import Image as _Image
+
+    player = DST / "player"
+    for facing in ("south", "north"):
+        im = _Image.open(player / f"player-{facing}-1.png").convert("RGBA")
+        im.transpose(_Image.Transpose.FLIP_LEFT_RIGHT).save(
+            player / f"player-{facing}-2.png",
+            optimize=True,
         )
+        print(f"ok player/player-{facing}-2.png (hflip walk1)")
+
+    _Image.open(player / "player-east-1.png").convert("RGBA").save(
+        player / "player-east-2.png",
+        optimize=True,
+    )
+    print("ok player/player-east-2.png (copy walk1; side art follow-up)")
+
+    process(
+        "player-west-walk2.png",
+        "player/player-west-2.png",
+        48 * SCALE,
+        64 * SCALE,
+    )
     for c in [
         "mossling", "ember-wisp", "brook-nymph", "stone-hound", "mist-serpent",
         "rootwalker", "lantern-fox", "thunder-finch", "bramblewarden", "hearthflame",
