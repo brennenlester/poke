@@ -50,8 +50,9 @@ def process(src_name, dest_rel, max_w, max_h, pad=4):
 
 def main():
     for facing in ["south", "north", "east", "west"]:
+        # Style D walk1 is canonical idle + stride frame 1 (outfit-matched).
         process(
-            f"player-{facing}-idle.png",
+            f"player-{facing}-walk1.png",
             f"player/player-{facing}-0.png",
             48 * SCALE,
             64 * SCALE,

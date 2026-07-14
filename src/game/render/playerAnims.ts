@@ -91,50 +91,12 @@ function generateFrame(scene: Phaser.Scene, facing: Facing, frame: number): void
   g.destroy();
 }
 
-/**
- * Fallback when Imagine walk frames are missing: derive stride poses from idle.
- */
-function deriveWalkFramesFromIdle(scene: Phaser.Scene, facing: Facing): void {
-  const idleKey = textureKey(facing, 0);
-  if (!scene.textures.exists(idleKey)) {
-    return;
+function isImagineTexture(scene: Phaser.Scene, key: string): boolean {
+  if (!scene.textures.exists(key)) {
+    return false;
   }
-
-  const source = scene.textures.get(idleKey).getSourceImage() as
-    | HTMLImageElement
-    | HTMLCanvasElement;
-  const width = source.width || FRAME_WIDTH;
-  const height = source.height || FRAME_HEIGHT;
-
-  const stepX = Math.max(10, Math.round(width * 0.06));
-  const stepY = Math.max(14, Math.round(height * 0.07));
-  const poses: Record<number, { x: number; y: number; rot: number; squash: number }> = {
-    1: { x: -stepX, y: -stepY, rot: -0.08, squash: 0.92 },
-    2: { x: stepX, y: -stepY, rot: 0.08, squash: 0.92 },
-  };
-
-  for (const frame of [1, 2] as const) {
-    const key = textureKey(facing, frame);
-    if (scene.textures.exists(key)) {
-      scene.textures.remove(key);
-    }
-    const canvas = document.createElement("canvas");
-    canvas.width = width;
-    canvas.height = height;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) {
-      continue;
-    }
-    const pose = poses[frame];
-    ctx.clearRect(0, 0, width, height);
-    ctx.save();
-    ctx.translate(width / 2 + pose.x, height * 0.92 + pose.y);
-    ctx.rotate(pose.rot);
-    ctx.scale(1, pose.squash);
-    ctx.drawImage(source, -width / 2, -height * 0.92);
-    ctx.restore();
-    scene.textures.addCanvas(key, canvas);
-  }
+  const src = scene.textures.get(key).getSourceImage() as { width?: number };
+  return Boolean(src.width && src.width > FRAME_WIDTH);
 }
 
 export function getPlayerIdleTextureKey(facing: Facing = "south"): string {
@@ -143,22 +105,12 @@ export function getPlayerIdleTextureKey(facing: Facing = "south"): string {
 
 export function ensurePlayerAnims(scene: Phaser.Scene): void {
   for (const facing of FACINGS) {
-    // Style D Imagine pose as idle; derive matching stride frames from it.
-    // (Source walk2 sheets flip held props — do not use as consecutive frames.)
-    generateFrame(scene, facing, 0);
-    if (scene.textures.exists(textureKey(facing, 0))) {
-      const src = scene.textures.get(textureKey(facing, 0)).getSourceImage() as {
-        width?: number;
-      };
-      if (src.width && src.width > FRAME_WIDTH) {
-        deriveWalkFramesFromIdle(scene, facing);
-      } else {
-        generateFrame(scene, facing, 1);
-        generateFrame(scene, facing, 2);
+    // Prefer packed Imagine walk sheets (0=idle/walk1, 1=walk1, 2=walk2).
+    // Procedural frames fill any missing keys — no squash/rotate derivation.
+    for (const frame of [0, 1, 2] as const) {
+      if (!isImagineTexture(scene, textureKey(facing, frame))) {
+        generateFrame(scene, facing, frame);
       }
-    } else {
-      generateFrame(scene, facing, 1);
-      generateFrame(scene, facing, 2);
     }
 
     const idleKey = `player-idle-${facing}`;
@@ -177,7 +129,7 @@ export function ensurePlayerAnims(scene: Phaser.Scene): void {
     }
     scene.anims.create({
       key: walkKey,
-      frames: [0, 1, 2, 1].map((frame) => ({
+      frames: [1, 2, 1, 2].map((frame) => ({
         key: textureKey(facing, frame),
       })),
       frameRate: 8,

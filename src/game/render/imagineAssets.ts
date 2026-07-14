@@ -6,9 +6,8 @@ export const IMAGINE_ATLAS_KEY = "imagine-atlas";
  * Queue the packed Imagine atlas (PNG + JSON). Missing individual frames still
  * fall through to procedural ensure* helpers after promoteAtlasFrames runs.
  *
- * ponytail: only Style D walk1 is packed as the canonical trainer pose per facing.
- * Source walk2 art flips held props mid-cycle; stride frames are derived from walk1
- * until matching dual-pose Imagine sheets exist.
+ * Trainer frames: Style D walk1 → `player-*-0`/`*-1`, walk2 → `player-*-2`.
+ * ponytail: E/N walk2 still drifts staff/handedness; ship real sheets and correct art next.
  */
 export function preloadImagineAssets(scene: Phaser.Scene): void {
   scene.load.atlas(
