@@ -196,7 +196,7 @@ export class EncounterScene extends Phaser.Scene {
   private showResult(message: string): void {
     const text = this.addPanelText(
       DESIGN_SIZE / 2,
-      DESIGN_SIZE / 2 + 128,
+      DESIGN_SIZE / 2 + 160,
       message,
       PANEL_WIDTH - PANEL_PADDING * 2,
       {
